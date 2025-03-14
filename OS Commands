@@ -1,0 +1,17 @@
+All OS commands(HP Unix) :
+List commands:
+ls 
+ll
+ls -lrt
+ls -lart
+ls -lrt | grep -i <to search a specific file name>
+Mount Point bdf | df -h
+change director : cd 
+
+
+Mislleanous 
+ps -ef | grep -i tns | awk '{for(i=8;i<=NF;i++) if($i ~ /tnslsnr/) print $(i+1)}' to list only listerner name
+ps -ef | grep -i tns | grep -v print | grep -i grid | awk '{for(i=8;i<=NF;i++) if($i ~ /tnslsnr/) print $(i+1)}'
+ps -ef | grep -i tns | grep -v print | grep -v grid | awk '{for(i=8;i<=NF;i++) if($i ~ /tnslsnr/) print $(i+1)}'
+ps -ef | grep -i tns | awk '{for(i=9;i<=NF;i++)printf "%s ", $i; print ""}'
+
