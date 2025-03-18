@@ -1,0 +1,521 @@
+DataGuard
+Views
+v$database	v$logfile	v$log	v$standby_log
+v$archive_dest	v$dataguard_status	v$archive_dest_status
+v$managed_standby	
+
+Primary side configurations
+Step 1:	Install Oracle 12c software with one Database.
+
+Step 2:	Check Primary Database must be running in archive log mode if not, change it.
+
+SQL> set linesize 200
+SQL> select name, database_role, open_mode, db_unique_name, dbid from v$database;
+
+NAME	DATABASE_ROLE	OPEN_MODE	DB_UNIQUE_NAME	DBID
+-----	--------------	----------	---------------	----------
+PRD	PRIMARY	READ	WRITE	2188322810
+
+SQL> select log_mode from v$database;
+LOG_MODE
+------------
+NOARCHIVELOG
+
+SQL> shut immediate
+SQL> startup mount
+SQL> alter database archivelog;
+Database altered.
+
+SQL> alter database open;
+Database altered.
+
+SQL> select log_mode from v$database;
+LOG_MODE
+------------
+ARCHIVELOG
+
+
+
+
+
+
+Step 3:	Enable force logging using the following command.
+SQL> select force_logging from v$database;
+FORCE_LOGGING
+--------------------------
+NO
+SQL> alter database force logging;
+Database altered.
+SQL> select force_logging from v$database;
+FORCE_LOGGING
+--------------------------
+YES
+
+Step 4:	Now create standby redo logs for switchovers and should be adding one extra.
+SQL> col member for a40
+select group#,type, member from v$logfile;
+    GROUP# MEMBER
+---------- ----------------------------------------
+         3 /u01/app/oracle/oradata/PRD/redo03.log
+         2 /u01/app/oracle/oradata/PRD/redo02.log
+         1 /u01/app/oracle/oradata/PRD/redo01.log
+
+SQL> select group#, bytes/1024/1024 "size_mb" from v$log;
+    GROUP#    size_mb
+---------- ----------
+         1         50
+         2         50
+         3         50
+		 
+SQL> ALTER DATABASE ADD STANDBY LOGFILE GROUP 11 '/u02/oradata/LENDUAT/redo011.log' size 200M;
+Database altered.
+
+SQL> ALTER DATABASE ADD STANDBY LOGFILE GROUP 12 '/u02/oradata/LENDUAT/redo012.log' size 200M;
+Database altered.
+
+SQL> ALTER DATABASE ADD STANDBY LOGFILE GROUP 13 '/u02/oradata/LENDUAT/redo013.log' size 200M;
+Database altered.
+
+SQL> ALTER DATABASE ADD STANDBY LOGFILE GROUP 14 '/u02/oradata/LENDUAT/redo014.log' size 200M;
+
+Database altered.
+SQL> select group#, thread#, sequence#, archived, status from v$standby_log;
+    GROUP#    THREAD# SEQUENCE# ARC STATUS
+---------- ---------- ---------- --- ----------
+        11          0          0 YES UNASSIGNED
+        12          0          0 YES UNASSIGNED
+        13          0          0 YES UNASSIGNED
+        14          0          0 YES UNASSIGNED
+
+Step 5:	Check DB_NAME & DB_UNIQUE_NAME
+SQL> show parameter db_name
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ---------------------
+db_name                              string      lenduat
+
+SQL> show parameter db_unique_name
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- --------------------
+db_unique_name                       string      lenduat
+
+Note: On standby, db_unique_name is lenduatstby.
+
+Step 6:	Enable Log_archive_dest_1 & Log_archive_dest_2
+
+Log_archive_dest_1 – is for Primary destination
+Log_archive_dest_2 – is for Standby destination
+
+Now set remote archive log destination for standby 
+
+SQL> show parameter log_archive_dest_1
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ---------------------
+log_archive_dest_1                   string
+
+[oracle@prm ~] $ cd /u01/app/oracle/oradata/PRD/
+[oracle@prm PRD] $ mkdir arch
+[oracle@prm arch] $ pwd
+/u01/app/oracle/oradata/PRD/arch
+
+SQL> alter system set log_archive_dest_1='location=/u01/app/oracle/recovery_area/LENDUAT/archivelog VALID_FOR=(ALL_LOGFILES, ALL_ROLES) DB_UNIQUE_NAME=lenduat' scope=both;
+System altered.
+SQL> show parameter log_archive_dest_1
+NAME	TYPE	VALUE
+------------------	-----------	---------------------
+log_archive_dest_1	string
+location=/u01/app/oracle/oradata/PRD/arch VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=prd
+
+SQL> show parameter log_archive_dest_2
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ---------------------
+log_archive_dest_2                   string      
+
+SQL> alter system set log_archive_dest_2='service= lenduatstby lgwr async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name= lenduatstby ' scope=both;
+System altered.
+
+SQL> show parameter log_archive_dest_2
+NAME	TYPE	VALUE
+------------------	-----------	------------------------------
+log_archive_dest_2	string	service=prdsty lgwr async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name=prdsty
+
+Step 7:	The STANDBY_FILE_MANAGEMENT parameter must be set AUTO.
+
+SQL> ALTER SYSTEM SET STANDBY_FILE_MANAGEMENT=AUTO;
+System altered.
+
+SQL> show parameter STANDBY_FILE_MANAGEMENT
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ---------------------
+standby_file_management              string      AUTO
+
+
+Step 8 & 9:	Now configure a listener for your Primary Database using the NETMGR command & make TNS service on both sides (Primary & Standby).
+
+[oracle@prm admin]$ cat listener.ora
+# listener.ora Network Configuration File: /u01/app/oracle/product/12.1.0/dbhome_1/network/admin/listener.ora
+# Generated by Oracle configuration tools.
+
+SID_LIST_PRD =
+  (SID_LIST =
+    (SID_DESC =
+      (GLOBAL_DBNAME = PRD)
+      (ORACLE_HOME = /u01/app/oracle/product/12.1.0/dbhome_1)
+      (SID_NAME = PRD)
+    )
+  )
+
+ADR_BASE_PRD = /u01/app/oracle
+
+PRD =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = prm.oracle.com)(PORT = 1521))
+  )
+
+[oracle@prm admin]$ cd
+
+[oracle@prm ~] $ lsnrctl start PRD
+
+[oracle@prm admin] $ cat tnsnames.ora
+# tnsnames.ora Network Configuration File: /u01/app/oracle/product/12.1.0/dbhome_1/network/admin/tnsnames.ora
+# Generated by Oracle configuration tools.
+
+PRDSTY =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = stb.oracle.com)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = PRD)
+    )
+  )
+
+PRD =
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = prm.oracle.com)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = PRD)
+    )
+  )
+
+[oracle@prm admin] $ tnsping PRDSTY
+
+TNS Ping Utility for Linux: Version 12.1.0.2.0 - Production on 07-JAN-2023 21:26:37
+Copyright (c) 1997, 2014, Oracle.  All rights reserved.
+Used parameter files:
+
+Used TNSNAMES adapter to resolve the alias
+Attempting to contact (DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = stb.oracle.com)(PORT = 1521))) (CONNECT_DATA = (SERVICE_NAME = PRD)))
+OK (0 msec)
+
+[oracle@prm admin] $ tnsping PRD
+
+TNS Ping Utility for Linux: Version 12.1.0.2.0 - Production on 07-JAN-2023 21:26:38
+Copyright (c) 1997, 2014, Oracle.  All rights reserved.
+Used parameter files:
+
+Used TNSNAMES adapter to resolve the alias
+Attempting to contact (DESCRIPTION = (ADDRESS_LIST = (ADDRESS = (PROTOCOL = TCP)(HOST = prm.oracle.com)(PORT = 1521))) (CONNECT_DATA = (SERVICE_NAME = PRD)))
+OK (0 msec)
+
+
+
+
+
+
+
+
+Step 10:	Set the log_archive_config parameter as below.
+SQL> show parameter log_archive_config
+NAME                    	TYPE	VALUE
+---------------------	-----------	-----------------------------
+log_archive_config       string
+
+SQL> alter system set log_archive_config='dg_config=(LENDUAT,LENDUATSTBY)';
+System altered.
+
+SQL> show parameter log_archive_config
+NAME	TYPE	VALUE
+---------------------	-----------	------------------------
+log_archive_config	string	dg_config=(prd,prdsty)
+
+Step 11:	Must be set remote_login_passwordfile exclusive default it will be in EXCLUSIVE, if not change it.
+
+SQL> show parameter remote_login_passwordfile
+NAME	TYPE	VALUE
+--------------------------	-----------	------------------------
+remote_login_passwordfile	string	EXCLUSIVE
+
+SQL> alter system set remote_login_passwordfile='EXCLUSIVE' scope=both;
+System altered.
+
+Step 12: Now update the fal_client & fal_server parameter using the following commands.
+The FAL_SERVER specifies the fetch archive log (FAL) server for the standby database.
+The FAL_CLIENT specifies the FAL client name. Both are used by the FAL service.
+The FAL_SERVER is the primary and FAL_CLIENT is the standby.
+
+SQL> show parameter fal
+NAME	TYPE	VALUE
+------------------	-----------	------------------------
+fal_client	string
+fal_server	string
+
+SQL> alter system set fal_server='LENDUATSTBY' scope=both;
+System altered.
+
+SQL> alter system set fal_client='LENDUAT' scope=both;
+System altered.
+SQL> show parameter fal
+NAME	TYPE	VALUE
+-------------------	---------	------------------------------
+fal_client	string	PRD
+fal_server	string	PRDSTY
+
+Step 13:	Create pfile from spfile for the standby database.
+
+SQL> create pfile='/tmp/initlenduatstby.ora' from spfile;
+File created.
+
+NOTE: After all, that configuration your Primary pfile look like this.
+[oracle@prm ~] $ cat /tmp/initPRD.ora
+PRD.__data_transfer_cache_size=0
+PRD.__db_cache_size=331350016
+PRD.__java_pool_size=4194304
+PRD.__large_pool_size=8388608
+PRD.__oracle_base='/u01/app/oracle'#ORACLE_BASE set from environment
+PRD.__pga_aggregate_target=314572800
+PRD.__sga_target=524288000
+PRD.__shared_io_pool_size=16777216
+PRD.__shared_pool_size=155189248
+PRD.__streams_pool_size=0
+*.audit_file_dest='/u01/app/oracle/admin/PRD/adump'
+*.audit_trail='db'
+*.compatible='12.1.0.2.0'
+*.control_files='/u01/app/oracle/oradata/PRD/control01.ctl','/u01/app/oracle/oradata/PRD/control02.ctl'
+*.db_block_size=8192
+*.db_domain=''
+*.db_name='PRD'
+*.diagnostic_dest='/u01/app/oracle'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=PRDXDB)'
+*.fal_client='PRD'
+*.fal_server='PRDSTY'
+*.log_archive_config='dg_config=(prd,prdsty)'
+*.log_archive_dest_1='location=/u01/app/oracle/oradata/PRD/arch VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=prd'
+*.log_archive_dest_2='service=prdsty lgwr async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name=prdsty'
+*.open_cursors=300
+*.pga_aggregate_target=300m
+*.processes=300
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sga_target=500m
+*.standby_file_management='AUTO'
+*.undo_tablespace='UNDOTBS1'
+[oracle@prm ~] $
+
+NOTE: - Now we have done primary server tasks then move the pfile & password file from the PRIMARY server to the STANDBY server.
+
+[oracle@prm ~] $ cd /tmp/
+[oracle@prm tmp] $ scp -r initPRD.ora oracle@stb:$ORACLE_HOME/dbs
+[oracle@prm ~] $ cd $ORACLE_HOME/dbs
+[oracle@prm dbs] $ scp -r orapwPRD oracle@stb:$ORACLE_HOME/dbs
+
+STANDBY configurations
+Step 14:	Make some changes in pfile (Add two parameters log_file_name_convert & db_file_name_convert ,  after changing your standby pfile look like this.
+[oracle@stb ~] $ cd $ORACLE_HOME/dbs
+[oracle@stb dbs] $ vi initPRD.ora
+[oracle@stb dbs] $ cat initPRD.ora
+PRDSTY.__data_transfer_cache_size=0
+PRDSTY.__db_cache_size=331350016
+PRDSTY.__java_pool_size=4194304
+PRDSTY.__large_pool_size=8388608
+PRDSTY.__oracle_base='/u01/app/oracle'#ORACLE_BASE set from environment
+PRDSTY.__pga_aggregate_target=314572800
+PRDSTY.__sga_target=524288000
+PRDSTY.__shared_io_pool_size=16777216
+PRDSTY.__shared_pool_size=155189248
+PRDSTY.__streams_pool_size=0
+*.audit_file_dest='/u01/app/oracle/admin/PRDSTY/adump'
+*.audit_trail='db'
+*.compatible='12.1.0.2.0'
+*.control_files='/u01/app/oracle/oradata/PRDSTY/control01.ctl','/u01/app/oracle/oradata/PRDSTY/control02.ctl'
+*.db_block_size=8192
+*.db_domain=''
+*.db_name='PRD'
+*.diagnostic_dest='/u01/app/oracle'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=PRDXDB)'
+*.fal_client='PRDSTY'
+*.fal_server='PRD'
+*.log_archive_config='dg_config=(prd,prdsty)'
+*.log_archive_dest_1='location=/u01/app/oracle/oradata/PRDSTY/sarch VALID_FOR=(ALL_LOGFILES,ALL_ROLES) DB_UNIQUE_NAME=prdsty'
+*.log_archive_dest_2='service=prd lgwr async noaffirm reopen=15 valid_for=(all_logfiles,primary_role) db_unique_name=prd'
+*.open_cursors=300
+*.pga_aggregate_target=300m
+*.processes=300
+*.remote_login_passwordfile='EXCLUSIVE'
+*.sga_target=500m
+*.standby_file_management='AUTO'
+*.undo_tablespace='UNDOTBS1'
+*.db_file_name_convert='/u01/app/oracle/oradata/PRD','/u01/app/oracle/oradata/PRDSTY'
+*.log_file_name_convert='/u01/app/oracle/oradata/PRD','/u01/app/oracle/oradata/PRDSTY'
+*.db_unique_name='prdsty'
+[oracle@stb dbs] $
+
+Step 15: Make required directories on Standby Server
+[oracle@stb ~] $ mkdir -p /u01/app/oracle/admin/PRDSTY/adump
+[oracle@stb ~] $ mkdir -p /u02/app/oracle/oradata/PRDSTY
+[oracle@stb ~] $ mkdir -p /u02/app/oracle/oradata/fast_recovery_area
+
+
+Step 16: Now start standby instance using pfile nomount and create spfile at stage and restart again in nomount with spfile.
+[oracle@stb ~] $ export ORACLE_SID=PRD
+[oracle@stb ~] $ sqlplus / as sysdba
+
+SQL> startup nomount
+SQL> create spfile from pfile;
+File created.
+
+SQL> shut immediate
+
+[oracle@stb ~] $ sqlplus / as sysdba
+
+SQL> startup nomount
+SQL> show parameter spfile
+
+NAME	TYPE	VALUE
+------	------	---------------------------------------------------------
+Spfile	string	/u01/app/oracle/product/12.1.0/dbhome_1/dbs/spfilePRD.ora
+Start Duplicating Database using RMAN
+Step 17:	Now connect with RMAN with target & auxiliary instance using the following command.
+NOTE: You can do this on Primary or Standby it’s your choice.
+
+On standby connect to both the target (prd) and the auxiliary (prdsty) in RMAN.
+[oracle@stb ~] $ cd
+Recovery Manager: Release 12.1.0.2.0 - Production on Sat Jan 7 23:57:28 2023
+Copyright (c) 1982, 2014, Oracle and/or its affiliates.  All rights reserved.
+connected to target database: PRD (DBID=2188322810)
+connected to auxiliary database: PRD (not mounted)
+
+RMAN> duplicate target database for standby from active database dorecover nofilenamecheck;
+
+Step 18:	Verify Standby Configuration and start MRP process.
+-	Standby
+SQL> select name, dbid, open_mode, database_role from v$database;
+NAME	DBID	OPEN_MODE	DATABASE_ROLE
+--------- ----------	----------	----------------
+PRD       2188322810	MOUNTED	PHYSICAL STANDBY
+
+-	Start MRP Process on Standby
+SQL> alter database recover managed standby database disconnect;
+Database altered.
+
+-	Primary
+SQL> set linesize 200
+SQL> col DESTINATION for a50
+SQL> select dest_id, status, destination, error from v$archive_dest where dest_id<=2;
+
+   DEST_ID	STATUS	DESTINATION	ERROR
+----------	---------	------------------------------	-----------------
+         1	VALID	/u01/app/oracle/oradata/PRD/arch
+         2	VALID	prdsty
+
+SQL> set lines 999
+SQL> select * from v$dataguard_status order by timestamp;
+
+-	Standby
+SQL> set linesize 200
+SQL> col DESTINATION for a50
+SQL> select dest_id, status, destination, error from v$archive_dest where dest_id<=2;
+ DEST_ID	STATUS	DESTINATION	ERROR
+----------	--------	-------------------------------------	-----------
+  	1	VALID	/u01/app/oracle/oradata/PRDSTY/sarch	
+	2	VALID	prd
+
+-	Primary
+SQL> select sequence#, first_time, next_time, applied, archived from v$archived_log where name = 'prdsty' order by first_time;
+SEQUENCE#	FIRST_TIM	NEXT_TIME	APPLIED	ARC
+----------	---------	----------	---------	------
+   	13	07-JAN-23	07-JAN-23	YES	YES
+	14	07-JAN-23	07-JAN-23	YES	YES
+    15	07-JAN-23	07-JAN-23	NO	YES
+
+SQL> col filename for a55
+select sequence#, applied, first_time, next_time, name filename from v$archived_log order by sequence#;
+
+SEQUENCE#	APPLIED	FIRST_TIM	NEXT_TIME	FILENAME
+---------	-------	---------	---------	-----------------------------
+15	NO	07-JAN-23	07-JAN-23	
+		/u01/app/oracle/oradata/PRD/arch/1_15_1124659197.dbf
+15	YES	07-JAN-23	07-JAN-23 prdsty
+16	NO	07-JAN-23	07-JAN-23
+		/u01/app/oracle/oradata/PRD/arch/1_16_1124659197.dbf
+16	YES	07-JAN-23	07-JAN-23	prdsty
+17	NO	07-JAN-23	07-JAN-23
+		/u01/app/oracle/oradata/PRD/arch/1_17_1124659197.dbf
+17	YES	07-JAN-23	07-JAN-23 prdsty
+18	NO	07-JAN-23	07-JAN-23
+		/u01/app/oracle/oradata/PRD/arch/1_18_1124659197.dbf
+18	NO	07-JAN-23	07-JAN-23	prdsty
+
+SQL> select status, gap_status from v$archive_dest_status where dest_id=2;
+STATUS    GAP_STATUS
+--------- ------------------------
+VALID     NO GAP
+
+-	Standby
+SQL> select process, status, sequence# from v$managed_standby;
+PROCESS   STATUS        SEQUENCE#
+--------- ------------ ----------
+ARCH      CONNECTED             0
+ARCH      CLOSING              15
+ARCH      CONNECTED             0
+ARCH      CLOSING              14
+RFS       IDLE                  0
+MRP0      APPLYING_LOG         16
+RFS       IDLE                 16
+RFS       IDLE                  0
+8 rows selected.
+
+SQL> col filename for a100
+set linesize 200
+select sequence#, applied, first_time, next_time, filename from v$archived_log order by sequence#;
+
+SEQUENCE#	APPLIED	FIRST_TIM	NEXT_TIME	FILENAME
+---------	-------	---------	---------	----------------------------
+11	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/product/12.1.0/dbhome_1/dbs/arch1_11_1124659197.dbf
+12	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/product/12.1.0/dbhome_1/dbs/arch1_12_1124659197.dbf
+13	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_13_1124659197.dbf
+14	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_14_1124659197.dbf
+15	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_15_1124659197.dbf
+16	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_16_1124659197.dbf
+17	YES	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_17_1124659197.dbf
+18	IN-MEMORY	07-JAN-23	07-JAN-23
+	/u01/app/oracle/oradata/PRDSTY/sarch/1_18_1124659197.dbf
+
+
+
+
+
+
+Step 19: Standby instance to restart
+[oracle@stb sarch] $ sqlplus / as sysdba
+SQL*Plus: Release 12.1.0.2.0 Production on Sun Jan 8 00:17:03 2023
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+Connected to an idle instance.
+
+SQL> startup nomount
+ORACLE instance started.
+Total System Global Area 524288000 bytes
+Fixed Size                  2926320 bytes
+Variable Size             268437776 bytes
+Database Buffers          247463936 bytes
+Redo Buffers                5459968 bytes
+
+SQL> alter database mount standby database;
+Database altered.
