@@ -1,0 +1,30 @@
+SQL> select * from v$backup;
+
+     FILE# STATUS                CHANGE# TIME          CON_ID
+---------- ------------------ ---------- --------- ----------
+         1 NOT ACTIVE         7.7003E+12 23-JUN-23          0
+      9228 FILE MISSING                0                    0
+
+SQL> select open_mode,database_role from v$database;
+
+OPEN_MODE            DATABASE_ROLE
+-------------------- ----------------
+MOUNTED              PHYSICAL STANDBY
+
+SQL> alter database datafile 9228 offline drop;
+
+Database altered.
+
+SQL> alter database recover managed standby database disconnect from session
+Media recovery complete.
+SQL>
+
+
+------------------------------
+MRP up:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION;
+
+MRP down:
+
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL;
