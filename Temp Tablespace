@@ -1,0 +1,70 @@
+SELECT   A.tablespace_name tablespace, D.mb_total,
+          SUM (A.used_blocks * D.block_size) / 1024 / 1024 mb_used,
+          D.mb_total - SUM (A.used_blocks * D.block_size) / 1024 / 1024 mb_free
+ FROM     v$sort_segment A,
+          (
+          SELECT   B.name, C.block_size, SUM (C.bytes) / 1024 / 1024 mb_total
+          FROM     v$tablespace B, v$tempfile C
+          WHERE    B.ts#= C.ts#
+          GROUP BY B.name, C.block_size
+          ) D
+ WHERE    A.tablespace_name = D.name
+ GROUP by A.tablespace_name, D.mb_total;
+
+
+
+alter tablespace TEMP add tempfile '/integratedgg_redo_logs/DUMINVM1/TEMPFILE/temp_01.dbf' size 31990M;
+
+alter tablespace TEMP add tempfile '+' size 31990M;
+
+
+====================================================================================================
+Issue on nr autosys during opening in snapshot mode
+=========================================================================================================
+
+SQL> CREATE TEMPORARY TABLESPACE TEMP TEMPFILE '/new_autosys/autosys_db/Oradata/temp01.dbf' SIZE 3G;     (Creating temp file but it shows that it already exists)
+CREATE TEMPORARY TABLESPACE TEMP TEMPFILE '/new_autosys/autosys_db/Oradata/temp01.dbf' SIZE 3G
+*
+ERROR at line 1:
+ORA-01543: tablespace 'TEMP' already exists
+
+
+SQL>  CREATE TEMPORARY TABLESPACE TEMP1 TEMPFILE '/new_autosys/autosys_db/Oradata/temp01.dbf' SIZE 3G;   (Creating temp1 file)
+
+Tablespace created.
+
+SQL> ALTER DATABASE DEFAULT TEMPORARY TABLESPACE TEMP1;           (making temp1 file as default)
+
+Database altered.
+
+SQL> drop temporary TABLESPACE temp                  
+
+SQL> DROP TABLESPACE temp INCLUDING CONTENTS AND DATAFILES;       (dropping temp file)
+
+Tablespace dropped.
+
+SQL> CREATE TEMPORARY TABLESPACE TEMP TEMPFILE '/new_autosys/autosys_db/Oradata/temp02.dbf' SIZE 3G;     (Creating temp file again)
+
+Tablespace created.
+
+SQL>
+SQL>  ALTER DATABASE DEFAULT TEMPORARY TABLESPACE TEMP;   (making temp file as default)
+
+
+Database altered.
+
+SQL>
+SQL>  DROP TABLESPACE TEMP1 INCLUDING CONTENTS AND DATAFILES;      (dropping temp1 file)
+
+Tablespace dropped.
+
+SQL>
+SQL>
+SQL> select FILE_NAME,TABLESPACE_NAME,BYTES from dba_temp_files;     (to view temp file)
+
+FILE_NAME
+--------------------------------------------------------------------------------
+TABLESPACE_NAME                     BYTES
+------------------------------ ----------
+/new_autosys/autosys_db/Oradata/temp02.dbf
+TEMP                           3221225472
