@@ -1,0 +1,83 @@
+Prerequisties:
+Below commands should be executed on minimal before shutting down.
+select name from v$datafile where name like '%system%';
+show parameter control
+show parameter create
+Initially we need to take the backup from the source database. The backup should include  the System File and Control File. 
+Step 1:  Create a Directory to take backup.
+mkdir <directory_name>
+Step 2:  Connect to the source database RMAN utility to take the backup.
+Note: Kindly make sure to down the Media recovery Process for the consistent backup set. If source is standby database.
+ Down MRP: Alter database recover managed standby database disconnect from session;
+To connect RMAN utility 
+.  oraenv a  set instance 
+rman target /
+To take back up. Execute below run script.
+run
+{
+backup as compressed backupset datafile 1 format'/<Directory_Name>/DATAFILE1_%d_%T.bkp';
+backup current controlfile for standby format'/ <Directory_Name>/ctl_%d_%T.ctl';
+}
+Note : Make sure control file format was in standby
+ALTER DATABASE CREATE STANDBY CONTROLFILE AS '/path/to/standby_control.ctl'; 
+Step 3:  Move backup to the target destination 
+scp –rp /<Directory_Name>/<Backup_folder> 10.0.20.51:/<Directory_Name>/
+
+Step 4:  Down the database and start the database service in nomount;
+.  oraenv a  set instance 
+shut immediate;
+startup nomount;
+
+
+Step 5:  Restore control file using RMAN utility.
+.  oraenv a  set instance 
+rman target /
+Execute below command to restore control  file.
+restore controlfile from '<Directory_Name>/<Control_file>';
+
+Once control file restored, Bring Database to mount mode.
+alter database mount;
+Step 6: Catalog the backup set.
+catalog start with '/<Directory_Name>/';
+Note: Make sure all the files listed  from present backup set.
+
+
+Step 7: Set new name for data file and restore.
+run
+{
+set newname for datafile 1 to '/<Directory_Name>/system_1.dbf';     
+restore datafile 1;
+}
+Note: mention previous system file location.
+Later datafile 1 was restored, Execute below command.
+switch datafile 1 to copy;
+
+
+Step 8:  Offline Drop all the data files. Clear and Drop all Online & Standby redo logs.
+
+Offline Drop all the datafiles, using below dynamic query.
+select 'alter database datafile '||file#||' offline drop;' from v$datafile where file#!=1;   
+
+Clear all the online & SRL’s
+select 'alter database clear logfile group '||group#||';' from v$logfile where type='STANDBY';
+select 'alter database clear logfile group '||group#||';' from v$logfile where type='ONLINE';
+Drop all the online & SRL’s
+select 'alter database drop standby logfile group '||group#||';' from v$logfile where type='STANDBY';
+select 'alter database drop logfile group '||group#||';' from v$logfile where type='ONLINE';
+
+
+Step 9: create new log file in the same existing location.
+Change the thread and group name while creating
+alter database add standby logfile thread 1 group 101 ('/<Directory_Name003E /stdby_redo_01.log') size 31990M;
+alter database add standby logfile thread 2 group 201 (''/<Directory_Name003E /stdby_redo_02.log') size 31990M;
+
+
+
+Step 10: Up the MRP & Log Shipping
+To up the MRP :
+alter database recover standby database disconnect from session;
+Note: Later,Enable Log shipping 
+
+set standby_file_management=manual on 
+alter system set standby_file_management=MANUAL;
+
