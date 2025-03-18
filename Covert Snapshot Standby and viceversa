@@ -1,0 +1,40 @@
+What is Snapshot Standby?
+⚫A snapshot standby database is a fully updateable standby database created by converting a physical standby database into a snapshot standby database.
+⚫A snapshot standby database receives and archives, but does not apply, redo data from a primary database. The redo data received from the primary database is applied once a snapshot standby database is converted back into a physical ⚫standby database, after discarding all local updates to the snapshot standby database.
+⚫A snapshot standby can be created from Enterprise Manager, the Data Guard Broker command-line interface (DGMGRL) or from SQL*Plus.
+
+
+
+
+
+
+Steps to convert physical standby to snapshot standby
+
+select name, database_role,open_mode from v$database;
+select process, status, sequence#,block# from v$managed_standby where process in ('MRP0','RFS');
+alter database recover managed standby database cancel;                   ==> Cancel MRP
+select process, status, sequence#,block# from v$managed_standby where process in ('MRP0','RFS');
+shut immediate;
+startup mount;
+show parameter db_recovery                                                ==> check recovery location and recovery dest size
+select flashback_on from v$database;
+alter database flashback on;
+select flashback_on from v$database;                                      ==> Check Status o/p flashback should be ON
+select NAME,GUARANTEE_FLASHBACK_DATABASE from v$restore_point;
+alter database convert to snapshot standby;                               ==> Command to convert physical standby to snapshot standby
+select NAME,GUARANTEE_FLASHBACK_DATABASE from v$restore_point;
+select name  from v$tempfile;			                          ==> DB should have Temp tablespace
+alter database open;
+******************************************************************************************************************************************************************************************
+
+Steps to convert snapshot standby to physical standby
+
+select name, database_role,open_mode from v$database;
+shut immediate;
+startup mount
+select name, database_role,open_mode from v$database;
+alter database convert to physical standby;
+select name, database_role,open_mode from v$database;
+alter database open read only;                                             ==> IF DB is required in Readonly mode/ skip command to keep it in mount state
+alter database recover managed standby database disconnect from session;
+select process, status, sequence#,block# from v$managed_standby where process in ('MRP0','RFS');
