@@ -1,0 +1,77 @@
+DATABASE STATUS
+
+PRIMARY DATABASE:
+* Check DATABASE_ROLE should be => PRIMARY
+* Check SWITCHOVER_STATUS => TO STANDBY
+STARTTIME            SYSDATETIME          DB_NAME         LOG_MODE     OPEN_MODE    DATABASE_ROLE    SWITCHOVER_STATUS    HOST_NAME       VERSION        CURRENT_SCN
+-------------------- -------------------- --------------- ------------ ------------ ---------------- -------------------- --------------- ---------- ---------------
+10-04-2025 00:18:51  19-04-2025 20:02:04  I012BAND        ARCHIVELOG   READ WRITE   PRIMARY          TO STANDBY           cbsprdb1        19.0.0.0.0   8581225134476
+
+STANDBY DATABASE:
+* Check DATABASE_ROLE should be => PHYSICAL STANDBY
+* Check SWITCHOVER_STATUS => TO PRIMARY
+STARTTIME            SYSDATETIME          DB_NAME         LOG_MODE     OPEN_MODE            DATABASE_ROLE    SWITCHOVER_STATUS    HOST_NAME       VERSION
+-------------------- -------------------- --------------- ------------ -------------------- ---------------- -------------------- --------------- ----------
+17-03-2025 00:42:45  19-04-2025 20:05:05  I012BAND        ARCHIVELOG   READ ONLY WITH APPLY PHYSICAL STANDBY NOT ALLOWED          cbsnrdb3        19.0.0.0.0
+
+DATABASE LOG STATUS
+
+FOR PRODUCTION:
+select thread#, max(sequence#) "Last Standby Seq Applied" from v$archived_log val, v$database vdb where val.resetlogs_change# = vdb.resetlogs_change# group by thread# order by 1;
+
+FOR STANDBY:
+select thread#, max(sequence#) "Last Standby Seq Applied" from v$archived_log val, v$database vdb where val.resetlogs_change# = vdb.resetlogs_change# and val.applied in ('YES','IN-MEMORY') group by thread# order by 1;
+
+DATABASE HAS NO ACTIVE SESSIONS:
+
+CHECK RUNNING SESSIONS ON PR & NR
+SET LINES 300 PAGES 20000
+COL USERNAME FOR A15
+COL EVENT FOR A30
+COL MODULE FOR A35
+COL PROCESS FOR A10
+COL MACHINE FOR A15
+set time on timing on
+select inst_id,username, status, count(1) from gv$session where type<>'BACKGROUND' group by inst_id, status,username order by 3;
+select INST_ID,SID, SERIAL#, USERNAME, STATUS, PROCESS, SQL_ID, MODULE,MACHINE, LAST_CALL_ET/60, BLOCKING_SESSION,BLOCKING_INSTANCE, EVENT from gv$session where username is not null and status='ACTIVE' order by 10;
+
+DATABASE HAS VALID DESTINATIONS ENABLED:
+
+CHECK ON PR & NR::
+set pages 500 lines 500
+select dest_id, status , error,db_unique_name from v$archive_dest_status;
+
+ DEST_ID STATUS    ERROR                                  DB_UNIQUE_NAME
+-------- --------- -------------------------------------- ------------------------------
+       1 VALID                                            NONE
+       2 VALID                                            I012BAND_NR
+
+SWITCHOVER PRIMARY TO STANDBY:
+set time on timing on
+host date
+set echo on
+set feedback on;
+set verify on
+select host_name from v$instance;
+alter database commit to switchover to physical standby with session shutdown;
+set echo off
+
+SWITCHOVER STATUS CHECK on STANDBY SITE:
+IT SHOULD BE IN "PRIMARY"
+ select name,open_mode, DATABASE_ROLE,controlfile_type,log_mode,flashback_on,SWITCHOVER_STATUS from gv$database;
+
+MRP STATUS ON:
+CHECK & STOP MRP:
+select process,status from v$managed_standby where PROCESS like '%MRP%';
+alter database recover managed standby database cancel;
+
+FLASHBACK ON STANDBY DATABASE IS DISABLED
+
+alter database flashback off;
+
+SWITCHOVER STANDBY TO PRIMARY:
+alter database commit to switchover to primary;
+
+Then start STANDBY database services.
+Make sure FLASHBACK is ON, FAL cilent & server is set properly, CHECK_SUM parameter, enable LOG SHIPPING from current PRIMARY, start MRP services at PR. 
+
