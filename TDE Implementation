@@ -1,0 +1,224 @@
+TDE Implementation
+What is TDE?
+Transparent Data Encryption (TDE) enables to encrypt sensitive data that stored in tables and tablespaces. TDE can be applied to individual columns or entire tablespaces. After the data is encrypted, this data is transparently decrypted for authorized users or applications when they access this data. TDE helps protect data stored on media (also called data at rest) if the storage media or data file is stolen. To prevent unauthorized decryption, TDE stores the encryption keys in an external security module (software or external Keystore) external to the database, called a Keystore.
+In a multitenant environment, we can configure Keystore for either the entire container database (CDB) called as United mode or for individual pluggable databases (PDBs) called as Isolated mode. Using online or offline encryption of existing un-encrypted tablespaces enables you to implement Transparent Data Encryption with little or no downtime. You do not need to modify your applications to handle the encrypted data the database manages the data encryption and decryption. All of the objects that are created in the encrypted tablespace are automatically encrypted.
+TDE tablespace encryption uses the two-tiered, key-based architecture to transparently encrypt (and decrypt) tablespaces. The TDE master encryption key is stored in an external security module (software or external Keystore). This TDE master encryption key is used to encrypt the TDE tablespace encryption key, which in turn is used to encrypt and decrypt data in the tablespace.
+
+Step1: Test the environment setup by performing pre-requisite.
+Check for wallet_root in v$encryption_wallet.
+If wallet is already created, then check the status.
+SQL> show parameter wallet;
+
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+ssl_wallet                           string
+wallet_root                          string
+
+SQL> show parameter tde
+NAME                                				 TYPE       	 VALUE
+------------------------------------			 -----------	 ---------------------
+one_step_plugin_for_pdb_with_tde		boolean	        FALSE
+tde_configuration			     string
+
+SQL> select * from v$encryption_wallet;
+WRL_TYPE	WRL_PARAMETER	STATUS                         WALLET_TYPE          WALLET_OR  KEYSTORE   FULLY_BAC 	CON_ID
+--------   ----------------  -------------------------  -------------------    ---------- ---------  -------------  ---------
+FILE
+/oracle_12cRelease2/app/oracle/admin/vaultdb/wallet/
+NOT_AVAILABLE                                  UNKNOWN             SINGLE                 NONE        UNDEFINED   	0   
+
+Make sure the compatibility of database is above or equal to 12.2.0.0.0 
+
+SQL> show parameter compatible
+NAME                                 TYPE                VALUE
+-----------------------          ----------       ------------------------------
+compatible                        string          19.0.0
+
+
+Make the entry of wallet Path in sqlnet.ora file if not present:
+
+oracle@SBIDBUAT3:/oracle_19c/app/oracle/product/19.3/network/admin#cat sqlnet.ora
+SQLNET.ALLOWED_LOGON_VERSION_CLIENT = 10
+SQLNET.ALLOWED_LOGON_VERSION_SERVER = 10
+SQLNET.INBOUND_CONNECT_TIMEOUT=120
+SQLNET.EXPIRE_TIME=11
+ENCRYPTION_WALLET_LOCATION =
+ (SOURCE = (METHOD = FILE)
+  (METHOD_DATA =
+   (DIRECTORY = /oracle_12cRelease2/app/oracle/admin/$ORACLE_SID/wallet)
+   )
+   )
+SQLNET.ALLOWED_LOGON_VERSION_SERVER=11
+SSL_VERSION=1.2
+oracle@SBIDBUAT3:/oracle_19c/app/oracle/product/19.3/network/admin#
+
+Make sure the wallet Path entered in sqlnet.ora exists if not then create:
+(Path: $ORACLE_HOME/admin/$ORACLE_SID/wallet)
+
+oracle@SBIDBUAT3:/oracle_19c/app/oracle/admin/vaultdb#mkdir -p wallet/tde
+oracle@SBIDBUAT3:/oracle_19c/app/oracle/admin/vaultdb#ll -lrt
+drwxr-xr--   2 oracle     oinstall        96 Jan  8  2022 xdb_wallet
+drwxr-xr--   3 oracle     oinstall        96 Dec  7 16:36 wallet
+
+Take backup of spfile
+
+SQL> show parameter pfile
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+spfile                               string      /oracle_19c/app/oracle/product/19.3/dbs/spfilevaultdb.ora
+
+SQL>  createpfile='/tmp/vaultdb071222.ora' from spfile;
+File created.
+
+Step 2: Configure the Software Keystore Location:
+
+ In previous releases, the SQLNET.ENCRYPTION_WALLET_LOCATION parameter was used to define the Keystore directory location. This parameter has been deprecated. Oracle recommends that you use the WALLET_ROOT static initialization parameter and TDE_CONFIGURATION dynamic initialization parameter instead. Oracle database 12c introduced a new way to manage keystores, encryption keys and secrets using the ADMINISTER KEY MANAGEMENT command. This replaces the ALTER SYSTEM SET ENCRYPTION KEY and ALTER SYSTEM SET ENCRYPTION WALLET commands for key and wallet administration from previous releases.
+
+SQL> show parameter wallet;
+NAME                               		  TYPE        VALUE
+------------------------------------ 	----------- ------------------------------
+ssl_wallet		  string
+wallet_root	  string
+
+SQL> alter system set wallet_root='/oracle_19c/app/oracle/admin/vaultdb/wallet' scope=spfile;
+system altered.
+SQL>
+
+Take restart of Database:
+
+Since, this was an initialization parameter, the changes will reflect after Database bounce. Hence take restart of Database.
+SQL> shut immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+SQL>startup;
+ORA-32004: obsolete or deprecated parameter(s) specified for RDBMS instance
+ORACLE instance started.
+Total System Global Area 3221221936 bytes
+Fixed Size                  8929840 bytes
+Variable Size            1912602624 bytes
+Database Buffers         1291845632 bytes
+Redo Buffers                7843840 bytes
+Database mounted.
+Database opened.
+SQL> show parameter wallet
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+ssl_wallet                           string
+wallet_root                          string      /oracle_19c/app/oracle/admin/vaultdb/wallet
+
+SQL> alter system set tde_configuration="keystore_configuration=file" scope=both;
+System altered.
+SQL> show parameter tde
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+tde_configuration                    string      keystore_configuration=file
+
+Step 3: Creating a Password-Protected Software Keystore:
+Use the below command to create password protected Keystore. Once Keystore is created you will notice oracle created ewallet.p12 inside wallet_root location.
+
+SQL> administer key management create keystore '/oracle_19c/app/oracle/admin/vaultdb/wallet/tde' identified by "oracle123";
+keystore altered.
+SQL>
+
+Step 4: Open the Keystore:
+
+After Keystore is created it will be in closed status. We need to open Keystore using below command. You can check the status in view v$ENCRYPTION_WALLET. You will notice that status is showing OPEN_NO_MASTER_KEY as still, we didn’t create the master key.
+
+SQL> administer key management set keystore open identified by "password";
+keystore altered.	
+
+SQL> administer key management set key identified by "password" with backup using 'TDE';
+keystore altered.
+
+Step 5: Convert Password-Protected Software Keystore to AutoLogin:
+We need to convert Keystore to Autologin so Keystore is open by itself without waiting for manual Keystore open operation and DB is available immediately after restart to users. Test DB restart after Keystore is converted to autologin we will also notice oracle will create file cwallet.sso.
+
+SQL>administer key management create auto_login keystore from keystore '/oracle_19c/app/oracle/admin/vaultdb/wallet/tde' identified by "oracle123";
+keystore altered.
+
+SQL>  select * from v$encryption_wallet;
+WRL_TYPE
+----------
+WRL_PARAMETER
+--------------------------------------------------------------------------------
+STATUS                         WALLET_TYPE          WALLET_OR KEYSTORE FULLY_BAC 		CON_ID
+------------------------------ -------------------- --------- -------- ---------			----------   
+FILE
+/oracle_19c/app/oracle/admin/vaultdb/wallet/tde/
+OPEN                           PASSWORD             SINGLE    NONE     NO 				0
+
+Step 6: Get the details of COLUMN on which you want to enable TDE.
+=============================================================================
+SQL> SET LINES 2000 PAGES 200
+SQL> select COLUMN_NAME,DATA_TYPE from dba_tab_columns where TABLE_NAME='CLIENT_AUTH_CONFIG';
+COLUMN_NAME           DATA_TYPE
+---------------   --------------
+CLIENT_ID             VARCHAR2
+AUTH_TYPE_ID          VARCHAR2
+AUTH_VALUE            VARCHAR2
+STATUS                VARCHAR2
+
+SQL> DESC VAULTBATCH.CLIENT_AUTH_CONFIG
+ Name                                                                                                                                                                                                       
+ ------------------------------------------------
+ CLIENT_ID                                                                                                                                                                                                   
+ AUTH_TYPE_ID                                                                                                                                                                                                
+AUTH_VALUE                                                                                                                                                                                                                                
+ STATUS
+Note: Take backup of the table.
+Step7: Enable TDE on Column:
+
+SQL> alter table vaultbatch.client_auth_config modify ( AUTH_VALUE encrypt);
+alter table vaultbatch.client_auth_config modify ( AUTH_VALUE encrypt)
+*
+ERROR at line 1:
+ORA-47401: Realm violation for ALTER TABLE on VAULTBATCH.CLIENT_AUTH_CONFIG
+
+Note: Above error was observed, as the owner of the Table can only run the alter command on Table.
+
+oracle@SBIDBUAT3:/home/oracle#sqlplus
+SQL*Plus: Release 19.0.0.0.0 - Production on Wed Dec 7 16:55:02 2022
+Version 19.14.1.0.0
+Enter user-name: vaultbatch
+Enter password:
+Last Successful login time: Wed Dec 07 2022 16:48:42 +05:30
+Connected to:
+Oracle Database 19c Enterprise Edition Release 19.0.0.0.0 - Production
+Version 19.14.1.0.0
+SQL>  create table vaultbatch.client_auth_config_bkp as (select * from vaultbatch.client_auth_config);
+Table created.
+SQL>
+Note: Backup of table was taken
+
+
+SQL>
+SQL> alter table vaultbatch.client_auth_config modify ( AUTH_VALUE encrypt);
+Table altered.
+SQL>
+
+Take restart of Database:
+SQL>  shut immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+
+SQL>startup;
+ORA-32004: obsolete or deprecated parameter(s) specified for RDBMS instance
+ORACLE instance started.
+Total System Global Area 3221221936 bytes
+Fixed Size                  8929840 bytes
+Variable Size            1912602624 bytes
+Database Buffers         1291845632 bytes
+Redo Buffers                7843840 bytes
+Database mounted.
+Database opened.
+SQL>
+
+After restart, the encrypted column will reflect in dba_encrypted_columns view.
+
+SQL> select TABLE_NAME,COLUMN_NAME,ENCRYPTION_ALG from dba_encrypted_columns where TABLE_NAME='CLIENT_AUTH_CONFIG';
+
+TABLE_NAME		     COLUMN_NAME		ENCRYPTION_ALG
+-------------------------------------------               --------------------
+CLIENT_AUTH_CONFIG    	AUTH_VALUE		AES 192 bits key
