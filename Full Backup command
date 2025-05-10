@@ -1,0 +1,11 @@
+nohup rman target / cmdfile='/YEAR_END_BACKUP_23/YEAR_END_BACKUP_CCDPDLY/ccdpdly_rman.rcv' log '/YEAR_END_BACKUP_23/YEAR_END_BACKUP_CCDPDLY/LOG_CCDPDLY_YEAR_END.log' &
+ 
+run
+{
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system switch logfile';
+sql 'alter system checkpoint';
+backup AS COMPRESSED BACKUPSET full database tag CCDPDLY_FULL format '/YEAR_END_BACKUP_23/YEAR_END_BACKUP_CCDPDLY/YearEnd23ccdpdly_Datafile_%U.bkp';
+BACKUP CURRENT CONTROLFILE TAG 'CCDPDLY_CONTROLFILE' FORMAT '/YEAR_END_BACKUP_23/YEAR_END_BACKUP_CCDPDLY/YearEnd23ccdpdlyControl_%u';
+}
