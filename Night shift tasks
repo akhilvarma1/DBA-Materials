@@ -1,0 +1,248 @@
+Always make space management in archsbi and gectDB
+
+Kindly maintain 200 GB space in below mentioned tables in gectdb (10.0.20.30) for offline loading.
+
+TSDATA_100M_A,TSIDX_100M_A
+
+Kindly maintain 250 GB space in below mentioned tables in archsbi (10.0.20.63) for offline loading.  <-----If INCT archival is schedule and reorg is there in Night shift.
+
+TSDATA_5M
+TSIDX_1M
+TSIDX_100M_A
+TSDATA_200M_A.
+
+===================================================
+
+
+master 3  <-----Day to Night DB Link
+master 1  <-----Night to Day DB Link
+
+
+======================================================
+Duriing Capitalization -
+
+We need to change original tnanames.ora with tnsnames.ora_Promotion on 10.0.20.91/92/93/94
+
+Day 
+10.0.20.91/92 to 10.0.20.180 (TNS - i014banr)
+10.0.20.93/94 to 10.0.20.181 (TNS - i014banr)
+
+Night
+10.0.20.91/92 to 10.0.20.49 (TNS - ib24n)
+10.0.20.93/94 to 10.0.20.49 (TNS - ib24n)
+
+
+Durring Normal Days - 
+
+Use original tnsnames.ora, do not use tnsnames.ora_Promotion on 10.0.20.91/92/93/94
+
+Day
+10.0.20.91 to 10.0.20.49 (TNS - i014banr)
+10.0.20.92/93/94 to 10.0.20.27 (TNS - i014banr)
+
+Night
+10.0.20.91/92 to 10.0.20.49 (TNS - ib24n)
+10.0.20.93/94 to 10.0.20.49 (TNS - ib24n)
+
+
+============== Pre EOD ============================
+
+--AFter branch cutoff start gather stats on IG table on Production 4th Node (stats_ig.sql)
+--After branch cutoff start gather stats on sbivvrt DB (PR -VVR_STATS.sql)(NR -night_stats_vvr.sql)
+--REGION SWITCH (Read - DayDB, Write - NightDB)
+--PreEOD Call logged
+
+before runbat make NR Day mrp in SIRA.
+
+----- make dest defer on prod Day -----
+ 
+Once NR reached to pre eod sequence, Bring down MRP of NR (day and Night)
+Check log_1 dest , It should change from MP to diskgroup DG_ARCHIVAL_XP7 after Runbat  <-----In RUNBAT dest one Day PROD cha mount point hoto, so after RUNBAT it should be DISKGROUP.
+
+select dest_id,inst_id,status,error from gv$archive_dest_status where dest_id=3;
+
+2,12,4,8 ------NR and vvrt please check.
+
+Enable NR dest after 5 mins (after NR split)(log_archive_dest_2) on PROD DAY
+--Enable vvrt  minimal dest(log_archive_dest_4) on PROD DAY
+
+
+--Also register logs on NR Day which are comes in mount point, if logs are not reached on DWP or Pawana.
+
+
+Neera (Day 10.0.20.49/27/50 (i012band), Night 10.0.20.49(i013bans))
+Check Day and Night DB, check listener
+Day in noarchivelog mode,
+night in archivelog mode.
+scripts --> sh dbcheck.sh, @name.sql
+
+Refnr (10.189.20.49 single node)
+Refnr (10.189.20.49/27/50 day single node --- night on 49)
+Check Day and Night DB, check listener
+scripts --> sh dbcheck.sh, @name.sql
+select count(*) from dual@MASTER_1_LINK.SBI_BANCS;
+ select count(*) from dual@MASTER_3_LINK.SBI_BANCS;
+
+After Refnr release, Bring up MRP of NR
+
+-------------------(refnr Night dblink changes need to do)
+
+
+################################################################################
+Belapur night ----to---- neera day or refnr day (Do changes in i014banr tnsentry on belapur night 4 nodes as per release server IP)
+archsbi, gect db link need to check from server which is going to release and archsbi,gect  ----- Day
+
+select OWNER,DB_LINK,HOST from dba_db_links where DB_LINK like '%GECT%';
+########################DB link tns details#####################################
+refnr night to refnr day (10.189.20.49)
+neera night to refnr day (10.0.20.49)
+
+10.189.20.49/27/50 - ib24n  ----->10.0.20.49/10.189.20.49
+10.189.20.27 - i013bans     ----->10.0.20.49/10.189.20.49
+============================================================================================================
+############################################################################################################
+
+=================== EOD ======================
+--DB SWITCH (Read - REF DB, Write - NightDB)
+--Start Reorg after DB switch
+
+Eod checks (@eod.sql)
+@sesn
+@link
+Maintain Enough space in DG_ARCHIVAL_XP7 diskgroup
+
+No linkuser active session should 
+select status, count(*) from gv$session where USERNAME='LINKUSR' group by status;
+---select INST_ID,SID, SERIAL#, USERNAME, STATUS, PROCESS, SQL_ID, MODULE, LAST_CALL_ET/60, 
+---BLOCKING_SESSION, EVENT from gv$session where username is not null and status='ACTIVE' and username='LINKUSR';
+---SELECT 'alter system kill session '''||sid||','||serial#||','||'@'||INST_ID||''' immediate;' from gv$session where USERNAME='LINKUSR' and status='INACTIVE';
+
+--EOD Running
+
+monitor tablespace / sessions / portal 800 job / alert log 
+defer pawana once 800 job starts and enable once 800 get completed.  <------EOD PROCESS
+
+
+
+
+/OEM/Agent_13c/agent_13.4.0.0.0/bin/./emctl stop agent
+
+/OEM/Agent_13c/agent_13.4.0.0.0/bin/./emctl start agent
+
+
+
+
+--After EOD
+--DB SWITCH again (Read - DayDB, Write - NightDB)
+--PreSYnc call start 
+--PreSync call closed    IG stats
+--PostEOD call
+--PostEOD Backup to CDC Team
+
+==================== POST EOD==============================
+before runbat make NR Day mrp in SIRA.
+
+-----before runbat make defer belapur dest on Day DB.
+
+Check log_1 dest , It should change from MP to diskgroup DG_ARCHIVAL_XP7 after Runbat
+post eod logs get renamed in mount point -- check it.  <-------------------------------------Very Very IMP Step.
+
+Then enable dest 2(Nr dest) and 12(Dr dest) on PR
+
+select dest_id,inst_id,status,error from gv$archive_dest_status where dest_id=3;
+
+
+Once NR reached to post eod sequence, Bring down MRP of NR (day and Night)
+
+---Enable NR dest after 2 mins (after NR split)
+
+
+============================================================================================================
+############################################################################################################
+alter session force parallel query;
+
+
+Agrani(10.0.20.180/181/186) and Neera(10.0.20.49) Night
+Check Day on agrani
+should be in NOARCHIVELOG
+Scripts--> @name.sql , 
+@db_link_script.sql  <-----To create db link, it should be execute only on one node.
+
+select count(*) from dual@MASTER_3_LINK.SBI_BANCS;(link to access night db on neera)
+alter session force parallel query;
+@space
+alter tablespace TSIDX_1M add datafile '+DG_I012BAND_DB_XP7' size 31990M;
+Mantain 1TB Free space in TSIDX_1M
+bdf /home /oracle_12C /oracle12c_R2_grid /var (oracle_home & grid_home mount points)
+ps -ef|grep tsn
+lsnrctl status LISTENER_dbrept1
+
+Agrani Night-----check @name.sql and alert log also agrani day to night from all three nodes and night to day only from first node.
+
+
+Check Night on Neera
+should be in ARCHIVELOG
+@name.sql
+@db_link_script.sql  <-----To create db link, it should be execute only on one node.
+select count(*) from dual@MASTER_1_LINK.SBI_BANCS;(link to access day db on agrani)
+bdf(oracle_home & grid_home mount points)
+ps -ef|grep tns
+lsnrctl status LISTENER_SBI_BANCS_REF
+============================================================================================================
+############################################################################################################
+
+
+########## Refnr (day and Night(i013bans))(10.189.20.49 1 node release)
+day on 10.189.20.49/27/50 and night on 10.189.20.49
+@name.sql
+---Mantain 250GB Free space in TSIDX_1M
+@db_link_script_agrani.sql  <-----To create db link, it should be execute only on one node.
+select count(*) from dual@MASTER_1_LINK.SBI_BANCS;  <-----To check night to day db link.
+
+
+
+########## Ofsa(10.189.20.125/126/123 3 node release)
+Check Day on Ofsa 1,2,3
+Script-->@name
+10.189.20.125 - ofsadb1
+@name (noarchivelog mode)
+@db_link_script_refnr.sql  <-----To create db link, it should be execute only on one node.
+select count(*) from dual@MASTER_3_LINK.SBI_BANCS;  <-----To check day to night db link.
+lsnrctl status LISTENER_ofsadb1
+bdf /var /home /oracle_12C_grid /oracle_12C
+
+
+
+
+########## Penna NR(rptdbnr1/rptdbnr2) 10.189.20.14/15 ----- 2 node release)  <-----i216banr
+Start Day and Night DB on both nodes
+======in Day DB
+@name.sql
+@day 
+Run "/home/oracle/scripts/create_profile.sql" then run "/home/oracle/scripts/create_user.sql" then run "/home/oracle/scripts/grant_role.sql" 
+Miantain 600GB Free space in TSIDX_1M
+
+bdf
+ps -ef|grep tns
+
+sh dbcheck.sh
+
+======in Night DB (14-i023bans/15-i013bans) - noarchivelog mode   <-----i023bans
+@night 
+@name.sql (noarchivelog mode)
+bdf
+ps -ef|grep tns(LISTENER_I023BANS || LISTENER_I013BANS)
+lsnrctl status LISTENER_I023BANS
+lsnrctl status LISTENER_I013BANS
+
+After all copies release, Bring up MRP of NR
+
+
+--PostEOD call closed
+--REGION SWITCH (Read - DayDB, Write - DayDB)
+
+===============================================================================================================
+Check PostEOD logs and logs which are at file system on PR site, then check whether HYD PostEOD reached or not.
+Once HYD MRP is down, start SCP of all file system logs and PostEOD logs at NR site and register them.
+
+
