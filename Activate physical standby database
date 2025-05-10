@@ -1,0 +1,101 @@
+
+
+
+CHECKPOINT_CHANGE#      FILE#
+------------------ ----------
+        1.2037E+12        994
+        1.4296E+12       1891
+        5.8542E+12       2779
+        5.8657E+12       3046
+        5.9079E+12       3175
+
+
+
+
+SQL> select name,open_mode,log_mode,controlfile_type,flashback_on ,database_role from v$database ;
+
+NAME      OPEN_MODE            LOG_MODE     CONTROL FLASHBACK_ON       DATABASE_ROLE
+--------- -------------------- ------------ ------- ------------------ ----------------
+I012BAND  MOUNTED              ARCHIVELOG   STANDBY YES                PHYSICAL STANDBY
+
+select distinct to_char(CHECKPOINT_CHANGE#) from v$datafile_header;
+
+select fuzzy,file# from v$datafile_header where fuzzy='YES';
+
+recover database using backup controlfile;
+
+select count(file#) ,CHECKPOINT_CHANGE# from v$datafile_header group by CHECKPOINT_CHANGE#;
+
+select 'alter database clear logfile group '||GROUP#||';' from v$logfile where type ='STANDBY';
+select 'alter database drop logfile group '||GROUP#||';' from v$logfile where type ='STANDBY';
+
+clear log
+
+--on RefNR drop log
+
+alter database activate physical standby database ;
+
+alter database flashback off;
+
+alter database noarchivelog;
+
+alter database open;
+
+SQL>  select name,open_mode,log_mode,controlfile_type,flashback_on ,database_role from v$database ;
+
+NAME      OPEN_MODE            LOG_MODE     CONTROL FLASHBACK_ON       DATABASE_ROLE
+--------- -------------------- ------------ ------- ------------------ ----------------
+I012BAND  READ WRITE           NOARCHIVELOG CURRENT NO                 PRIMARY
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+SQL>  alter database clear logfile group 107;
+
+Database altered.
+
+SQL>  alter database activate physical standby database ;
+
+
+Database altered.
+
+SQL>
+SQL>
+SQL>
+SQL> alter database noarchivelog ;
+
+Database altered.
+
+SQL>
+SQL>
+SQL> select name,open_mode,log_mode,controlfile_type,flashback_on ,database_role from v$database ;
+
+NAME      OPEN_MODE            LOG_MODE     CONTROL FLASHBACK_ON       DATABASE_ROLE
+--------- -------------------- ------------ ------- ------------------ ----------------
+I012BAND  MOUNTED              NOARCHIVELOG CURRENT NO                 PRIMARY
+
+SQL>
+SQL>
+SQL> alter database open ;
+
+Database altered.
+
+SQL>
+SQL>
+SQL>
+SQL>
+SQL> select name,open_mode,log_mode,controlfile_type,flashback_on ,database_role from v$database ;
+
+NAME      OPEN_MODE            LOG_MODE     CONTROL FLASHBACK_ON       DATABASE_ROLE
+--------- -------------------- ------------ ------- ------------------ ----------------
+I012BAND  READ WRITE           NOARCHIVELOG CURRENT NO                 PRIMARY
+
+
+
+fonesbi query :
+select *  from f1_glld a where glld_year='2024' and glld_curr='INR' and glld_entity='00300' and glld_acct='2006070601' and glld_site='01' and glld_unit='00001' order by glld_date ;
+
+
+
+
+shut down the database after confirmation from cdc team .
