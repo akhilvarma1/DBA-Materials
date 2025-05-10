@@ -1,0 +1,616 @@
+
+Prerequisite
+
+1) Disable stats 
+
+Table to lock:
+exec dbms_stats.lock_table_stats('SYS','WRH$_ACTIVE_SESSION_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_FILESTATXS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_EVENT_HISTOGRAM');
+exec dbms_stats.lock_table_stats('SYS','WRH$_LATCH');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SQLSTAT');
+exec dbms_stats.lock_table_stats('SYS','WRP$_REPORTS_DETAILS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSSTAT');             
+exec dbms_stats.lock_table_stats('SYS','WRH$_PROCESS_WAITTIME');
+exec dbms_stats.lock_table_stats('SYS','WRH$_LATCH_MISSES_SUMMARY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_PARAMETER');        
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSMETRIC_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SEG_STAT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_STREAMS_POOL_ADVICE');
+exec dbms_stats.lock_table_stats('SYS','WRH$_PROCESS_WAITTIME');
+exec dbms_stats.lock_table_stats('SYS','WRH$_CON_SYSTEM_EVENT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_BG_EVENT_SUMMARY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSMETRIC_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_RESOURCE_LIMIT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SERVICE_STAT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSSTAT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSTEM_EVENT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_DB_CACHE_ADVICE');
+exec dbms_stats.lock_table_stats('SYS','WRH$_CON_SYSTEM_EVENT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_DLM_MISC');
+exec dbms_stats.lock_table_stats('SYS','WRH$_PERSISTENT_SUBSCRIBERS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SQL_PLAN');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSMETRIC_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SERVICE_STAT');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSTEM_EVENT');
+exec dbms_stats.lock_table_stats('SYS','WRP$_REPORTS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SYSMETRIC_SUMMARY');
+
+*********************************************************
+exec dbms_stats.set_param('estimate_percent',2);
+exec dbms_stats.set_param('stale_percent',80);
+exec dbms_stats.set_param('cascade','FALSE');
+*********************************************************
+exec dbms_stats.gather_fixed_objects_stats;		==> Elapsed: 00:08:04.50
+exec dbms_stats.gather_dictionary_stats;		==> Elapsed: 00:05:38.90
+***************************************************************************************************************************************************************************
+exec dbms_stats.lock_table_stats('SYS','WRH$_ACTIVE_SESSION_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_FILESTATXS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_EVENT_HISTOGRAM');
+exec dbms_stats.lock_table_stats('SYS','WRH$_LATCH');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SQLSTAT');
+exec dbms_stats.lock_table_stats('SYS','WRP$_REPORTS_DETAILS');
+
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_SYNOPSIS$');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_OPR');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_IND_HISTORY');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_HISTGRM_HISTORY');
+EXEC DBMS_STATS.GATHER_DICTIONARY_STATS ( options => 'GATHER STALE', DEGREE => 128); ==> degree depends on server RAM
+
+***************************************************************************************************************************************************************************
+col comp_name for a30
+col COMP_NAME format a35
+col VERSION format a30
+col STATUS format a30
+select COMP_NAME,VERSION,STATUS from dba_registry;
+
+Install Oracle Label Security by executing the catols.sql script.
+@$ORACLE_HOME/rdbms/admin/catols.sql
+Oracle Label Security must be installed before you can use Oracle Database Vault.
+
+Install Oracle Database Vault by executing the catmac.sql script.
+
+@$ORACLE_HOME/rdbms/admin/catmac.sql
+
+
+At the Enter value for 1 prompt, enter the default tablespace -> TSDATA_1M
+At the Enter value for 2 prompt, enter the temporary tablespace ->  TEMP1
+For the 3rd value,Please provide sys password. 
+
+set lines 200 pages 200
+
+1. Get users in database
+
+col USERNAME for a30
+col ACCOUNT_STATUS for a30
+select username,account_status from dba_users;
+
+2. Check object count under users
+col OWNER for a30
+select count(*) , owner from dba_segments where owner in
+('DVF','DVSYS') group by owner; 
+
+3. check roles assigned to users
+
+col GRANTEE for a30
+col PRIVILEGE for a30
+Select * from dba_role_privs where grantee in
+('DVF','DVSYS') order by GRANTEE;
+
+4. Check privileges on table to users
+
+select distinct grantee,PRIVILEGE from dba_tab_privs where grantee in
+('DVF','DVSYS') order by GRANTEE;
+
+
+
+1. Configure DB vault
+1) create profile vault_profile limit
+PASSWORD_LIFE_TIME unlimited
+PASSWORD_VERIFY_FUNCTION NULL;
+
+
+alter profile vault_profile limit
+COMPOSITE_LIMIT                DEFAULT
+SESSIONS_PER_USER              unlimited
+CPU_PER_SESSION                DEFAULT
+CPU_PER_CALL                   DEFAULT
+LOGICAL_READS_PER_SESSION      DEFAULT
+LOGICAL_READS_PER_CALL         DEFAULT
+IDLE_TIME                      unlimited
+CONNECT_TIME                   DEFAULT
+PRIVATE_SGA                    DEFAULT
+FAILED_LOGIN_ATTEMPTS          unlimited
+PASSWORD_LIFE_TIME             UNLIMITED
+PASSWORD_REUSE_TIME            DEFAULT
+PASSWORD_REUSE_MAX             DEFAULT
+PASSWORD_VERIFY_FUNCTION       NULL
+PASSWORD_LOCK_TIME             DEFAULT
+PASSWORD_GRACE_TIME            DEFAULT;
+
+select RESOURCE_NAME,LIMIT from dba_profiles where profile='VAULT_PROFILE';
+
+2)
+
+create user DVOWNER identified by "oracle123" default tablespace TSIDX_1M profile VAULT_PROFILE;
+create user DVMANAGER identified by "oracle123" default tablespace TSIDX_1M profile VAULT_PROFILE;
+create user DVOWNER_BKP identified by "oracle123" default tablespace TSIDX_1M profile VAULT_PROFILE;
+create user DVMANAGER_BKP identified by "oracle123" default tablespace TSIDX_1M profile VAULT_PROFILE;
+
+
+
+
+grant create session to DVOWNER,DVMANAGER,DVOWNER_BKP,DVMANAGER_BKP;
+
+
+3)
+
+begin DVSYS.CONFIGURE_DV (dvowner_uname => 'DVOWNER',dvacctmgr_uname => 'DVMANAGER');
+end;
+/
+
+select count(1) from sys.aud$;
+
+conn dvowner/SbiFP#247
+
+4)
+
+exec dbms_macadm.enable_dv;
+exec dbms_macadm.disable_dv;
+
+5)
+
+select * From gv$option where parameter like '%Vault%' or parameter like '%Label%';
+
+6)
+
+
+Restart the database
+
+
+7)
+
+
+2) Realm creation
+
+
+
+
+conn dvowner/oracle123
+
+CREATE REALM
+=============
+begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'FNSONLI access',description =>'FNSONLI  access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+
+begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'INTRUSR access',description =>'INTRUSR access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+
+
+begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'FNSONLID access',description =>'FNSONLID access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+
+ 
+ begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'FNSONLIS access',description =>'FNSONLIS access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+ 
+ 
+ begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'FNSONLIR access',description =>'FNSONLIR access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+ 
+  begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'DWCDCADMNEW access',description =>'DWCDCADMNEW access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+  
+ begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'FNS access',description =>'FNS access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+ 
+ begin 
+ dvsys.dbms_macadm.create_realm(realm_name => 'QUERYI access',description =>'QUERYI access control',enabled=> dbms_macutl.g_yes,audit_options =>DBMS_MACUTL.G_REALM_AUDIT_FAIL,realm_type=>1);
+ end; 
+ /
+ 
+ 
+ ADD_OBJ
+===========
+
+
+
+begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'FNSONLI access',object_owner =>'FNSONLI',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+
+begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'INTRUSR access',object_owner =>'INTRUSR',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+
+ 
+ begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'FNSONLID access',object_owner =>'FNSONLID',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+ 
+ 
+ begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'FNSONLIS access',object_owner =>'FNSONLIS',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+ 
+ begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'FNSONLIR access',object_owner =>'FNSONLIR',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+ 
+ 
+ begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'DWCDCADMNEW access',object_owner =>'DWCDCADMNEW',object_name=>'%',object_type=>'%');  
+ end; 
+ / 
+ 
+begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'FNS access',object_owner =>'FNS',object_name=>'%',object_type=>'%');  
+ end; 
+ /
+
+begin 
+ dvsys.dbms_macadm.add_object_to_realm(realm_name => 'QUERYI access',object_owner =>'QUERYI',object_name=>'%',object_type=>'%');  
+ end; 
+ / 
+ 
+ ADD_AUTH
+================
+
+ begin
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SYS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);
+ end;
+/
+
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'FNSONLI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ /
+
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'INTRUSR access',grantee=>'INTRUSR',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ /
+
+
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLID access',grantee=>'FNSONLID',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ /
+
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLIS access',grantee=>'FNSONLIS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ /
+
+ 
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'DWCDCADMNEW access',grantee=>'DWCDCADMNEW',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ / 
+ 
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNS access',grantee=>'FNS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ / 
+ 
+begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'QUERYI access',grantee=>'QUERYI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);  
+ end; 
+ /
+ 
+ 
+ ADD_PART
+ ==========
+ 
+ begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SYS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+ begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'QUERYI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+
+ begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'FNSONLID',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+ begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'FNSONLIR',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+
+ begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'FNSONLIS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+
+  begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'QBLINKI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+  begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'DWCDCADMNEW',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+  begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'MICROAPI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+   begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'GGADMIN',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+
+begin 
+ dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'BHISEPRA',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SCHELLAK',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARRAJ',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'MAHESPRA',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'CHAUHSUM',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);
+ end; 
+ /
+  
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'PATRARAJ',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);
+ end; 
+ /
+  
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARSHU',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'TOPPORAN',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'BADHABAL',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SINGHABH',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'AVARUMUG',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'CHAWRNIS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'PRUSTRAM',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARSAT',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'MUNAGVEE',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'DWIIDRADM',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SINGHVID',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARPAN',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARMOH',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'MAURYRAV',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'PATELKIS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KUMARNIT',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /
+ 
+begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'KAKADNIL',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT); 
+ end; 
+ /  
+ 
+ 
+ 
+ begin dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'FNSONLID',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_owner); 
+ end; 
+ / 
+ 
+++FNSONLIR
+ 
+  begin 
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLIR access',grantee=>'FNSONLI',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_PARTICIPANT);  
+ end; 
+ /
+ 
+grant dv_owner to DVOWNER_BKP;
+grant dv_owner to DVOWNER_BKP with admin option;
+
+
+
+conn dvmanager/oracle123
+grant DV_ACCTMGR to DVMANAGER,DVMANAGER_BKP;
+grant DV_ACCTMGR to DVMANAGER,DVMANAGER_BKP with admin option;
+*************************************************************************************************************************************************
+conn dvowner/oracle123
+
+ begin
+  dvsys.dbms_macadm.ADD_AUTH_TO_REALM(realm_name => 'FNSONLI access',grantee=>'SYS',AUTH_OPTIONS=>DBMS_MACUTL.G_REALM_AUTH_OWNER);
+ end;
+ / 
+
+conn / as sysdba
+
+grant select on fnsonli.tier to fnsonlid;
+
+conn dvowner/oracle123
+
+ begin
+  dvsys.dbms_macadm.DELETE_AUTH_FROM_REALM(realm_name => 'FNSONLI access',grantee=>'SYS');
+ end;
+ / 
+*************************************************************************************************************************************************
+8) For Expdp operation
+
+exec dbms_macadm.authorize_datapump_user('SYS');
+
+9)FOR DDL operations
+execute dbms_macadm.authorize_ddl('SYS', 'SYSTEM');
+
+10)For GG operations
+
+grant DV_GOLDENGATE_ADMIN,DV_GOLDENGATE_REDO_ACCESS to GGUSER;
+
+BEGIN
+DVSYS.DBMS_MACADM.ADD_AUTH_TO_REALM
+(realm_name => 'Oracle Default Component Protection Realm',grantee => 'GGUSER' ,auth_options => 1);
+END ;
+/
+
+EXEC DBMS_MACADM.ADD_AUTH_TO_REALM('FNSONLI access','GGUSER');
+
+
+
+ col grantee format a30
+ col schema format a30
+ select * from dvsys.dba_dv_job_auth;
+ 
+
+
+1) Listing the Database Vault realms: 
+
+set linesize 2000
+set lines 1000 pages 499
+column realm_name format a40
+column col1 format a30
+column col2 format a30 Heading "Owner / Grantee "
+column col3 format a30 Heading "Object Type/Rule Set Name"
+column col4 format a30 Heading "Object Name/Auth Options"
+break on realm_name skip 3
+
+select * from (
+SELECT realm_Name , 'protected objects' col5, owner col2 , object_type col3 ,object_name col4
+FROM dvsys.dba_dv_realm_object 
+union
+select REALM_NAME ,'authorizations' col5, GRANTEE col2 ,AUTH_RULE_SET_NAME col3 , AUTH_OPTIONS col4
+from dvsys.dba_dv_realm_auth ) where realm_name like '%access%' 
+order by realm_name asc ,col5 desc
+/
+
+
+
+
+2) Listing the Database Vault command rules: 
+
+set lines 200 pages 499
+column COMMAND format a30
+column RULE_SET_NAME format a30
+column OBJECT_OWNER format a30
+column OBJECT_NAME format a30
+column ENABLED format a30
+column PRIVILEGE_SCOPE format a30
+col CLAUSE_NAME for a30
+col PARAMETER_NAME for a30
+col EVENT_NAME for a25
+col COMPONENT_NAME for a25
+col ACTION_NAME for a30
+select * from dvsys.DBA_DV_COMMAND_RULE;
+
+
+3) Listing the Database Vault rules and rule sets:
+
+column RULE_SET_NAME format a30
+column RULE_NAME format a50
+column RULE_EXPR format a60
+column ENABLED format a8
+column RULE_ORDER format 9999
+break on RULE_SET_NAME skip 3
+
+select * from dvsys.DBA_DV_RULE_SET_RULE;
+
+select name from DBA_DV_RULE ;
+
+select RULE_SET_NAME,RULE_NAME,RULE_EXPR from DBA_DV_RULE_SET_RULE ;
+
+select name,RULE_EXPR from DVSYS.DBA_DV_RULE ;
+
+SELECT REALM_NAME, GRANTEE, AUTH_RULE_SET_NAME FROM DVSYS.DBA_DV_REALM_AUTH;
+
+
+select * from dba_role_privs where granted_role='DV_ACCTMGR';
+
+grant exp_full_database to FNSONLI;
+
+
+
+
+
+
+
+   INST_ID PARAMETER                       VALUE             CON_ID
+---------- ------------------------------- ------------- ----------
+         2 Oracle Label Security           TRUE                   0
+         2 Oracle Database Vault           TRUE                   0
+         1 Oracle Label Security           TRUE                   0
+         1 Oracle Database Vault           TRUE                   0
+
+
+
+ALTER SYSTEM SET EVENTS 'TRACE[DV] DISK=HIGHEST'
+
+ALTER SYSTEM SET EVENTS 'TRACE[DV] OFF';
+
+
+begin
+dvsys.dbms_macadm.DELETE_AUTH_FROM_REALM(realm_name => 'FNSONLI access',grantee=>'SYS');
+end;
+/
