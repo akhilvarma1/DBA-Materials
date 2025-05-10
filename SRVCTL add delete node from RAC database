@@ -1,0 +1,74 @@
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#srvctl config database
+I012BAND_NR
+*********************************************************************************************************************
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#srvctl config database -d I012BAND_NR
+Database unique name: I012BAND_NR
+Database name: I012BAND
+Oracle home: /oracle_19c/app/oracle/product/19.3
+Oracle user: oracle
+Spfile: /OEM/Parameter/PARAMETERFILE_i112racd/spfile_i112racd.ora
+Password file:
+Domain:
+Start options: open
+Stop options: immediate
+Database role: PRIMARY
+Management policy: AUTOMATIC
+Server pools:
+Disk Groups: DG_ARCHIVAL_XP7,DG_I012BAND_REDO_NXP8,DG_FLASHBACK
+Mount point paths:
+Services:
+Type: RAC
+Start concurrency:
+Stop concurrency:
+OSDBA group: oinstall
+OSOPER group: oinstall
+Database instances: i112racd,i212racd,i312racd,i412racd
+Configured nodes: cbsnrdb1,cbsnrdb2,cbsnrdb3,cbsnrdb4
+CSS critical: no
+CPU count: 0
+Memory target: 0
+Maximum memory: 0
+Default network number for database services:
+Database is administrator managed
+*********************************************************************************************************************
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#srvctl status database -d I012BAND_NR
+Instance i112racd is not running on node cbsnrdb1
+Instance i212racd is not running on node cbsnrdb2
+Instance i312racd is not running on node cbsnrdb3
+Instance i412racd is not running on node cbsnrdb4
+
+*********************************************************************************************************************
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#srvctl remove database -d I012BAND_NR
+Remove the database I012BAND_NR? (y/[n]) y
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#
+*********************************************************************************************************************
+
+oracle@cbsnrdb1:/oracle_19c/app/oracle/product/19.3/dbs#srvctl config database -d I012BAND_NR
+PRCD-1120 : The resource for database I012BAND_NR could not be found.
+PRCR-1001 : Resource ora.i012band_nr.db does not exist
+*********************************************************************************************************************
+
+
+***************** TO ADD SERVICE **********************
+
+srvctl add database -db I012BAND_NR  -oraclehome /oracle_19c/app/oracle/product/19.3 -dbtype RAC -spfile spfile location
+srvctl add database -d I012BAND_NR -o /oracle_19c/app/oracle/product/19.3 -p spfilelocation
+
+srvctl add instance -db I012BAND_NR -instance i112racd -node cbsnrdb1
+srvctl add instance -db I012BAND_NR -instance i212racd -node cbsnrdb2
+srvctl add instance -db I012BAND_NR -instance i312racd -node cbsnrdb3
+srvctl add instance -db I012BAND_NR -instance i412racd -node cbsnrdb4
+
+
+*************************************************************************************************************************************************************************
+####### Commands for Adding Day database ######
+
+srvctl add database -db I012BAND -oraclehome /oracle_12C/app/oracle/product/12.2 -spfile +DG_I012BAND_DB_XP7/I012BAND/PARAMETERFILE/spfile.6022.1082421473 -dbname I012BAND
+
+
+#######  Adding Instances for Day database ####### 
+
+srvctl add instance -d I012BAND -i i112racd -n cbsprdb1
+srvctl add instance -d I012BAND -i i212racd -n cbsprdb2
+srvctl add instance -d I012BAND -i i312racd -n cbsprdb3
+srvctl add instance -d I012BAND -i i412racd -n cbsprdb4
