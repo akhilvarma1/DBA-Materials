@@ -1,0 +1,450 @@
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#ps -ef|grep pmon
+    root  1299     1  0  Sep  9  ?         2:36 ipmon -sD
+  oracle 48406     1  0  Dec  5  ?         0:56 ora_pmon_i012band
+  oracle 23181     1  0  Sep 10  ?         8:40 ora_pmon_igdb
+  oracle 27032     1  0  Sep 18  ?         7:25 ora_pmon_vvrtstub
+  oracle 30352     1  0  Nov  7  ?        18:22 ora_pmon_sbivvrt
+  oracle 51082     1  0  Nov  7  ?         2:24 asm_pmon_+ASM
+  oracle 55840 51761  0 01:30:15 pts/18    0:00 grep pmon
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#ps -ef| grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        42629:18 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 25252     1  1  Sep 10  ?        52:47 ora_mmon_igdb
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 30674     1  0  Nov  7  ?        132:03 ora_mmon_sbivvrt
+  oracle 48729     1  0  Dec  5  ?         0:42 ora_mmon_i012band
+  oracle 56713 51761  0 01:30:32 pts/18    0:00 grep -i mmon
+oracle@VVRDBPR:/home/oracle#kill -9 30674
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#ps -ef| grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        42629:45 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 25252     1  0  Sep 10  ?        52:47 ora_mmon_igdb
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 48729     1  0  Dec  5  ?         0:42 ora_mmon_i012band
+  oracle 59896 51761  0 01:31:06 pts/18    0:00 grep -i mmon
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#ps -ef| grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        42629:51 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  1  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 25252     1  0  Sep 10  ?        52:47 ora_mmon_igdb
+  oracle   616 51761  2 01:31:14 pts/18    0:00 grep -i mmon
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 48729     1  0  Dec  5  ?         0:42 ora_mmon_i012band
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#sqlplus / as sysdba
+
+SQL*Plus: Release 12.2.0.1.0 Production on Thu Dec 9 01:31:22 2021
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL> def
+DEFINE _DATE           = "20211209" (CHAR)
+DEFINE _CONNECT_IDENTIFIER = "sbivvrt" (CHAR)
+DEFINE _USER           = "SYS" (CHAR)
+DEFINE _PRIVILEGE      = "AS SYSDBA" (CHAR)
+DEFINE _SQLPLUS_RELEASE = "1202000100" (CHAR)
+DEFINE _EDITOR         = "vi" (CHAR)
+DEFINE _O_VERSION      = "Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production" (CHAR)
+DEFINE _O_RELEASE      = "1202000100" (CHAR)
+SQL> alter system enable restricted session;
+
+alter system enable restricted session
+*
+ERROR at line 1:
+ORA-00450: background process 'MMON' did not start
+ORA-01013: user requested cancel of current operation
+
+
+
+SQL>
+SQL>
+SQL> !ps -ef|grep mmon
+  oracle  8376  8258  0  Sep  9  ?        42631:25 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 25252     1  0  Sep 10  ?        52:48 ora_mmon_igdb
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 12911 12909  0 01:33:26 pts/18    0:00 grep mmon
+  oracle 48729     1  0  Dec  5  ?         0:42 ora_mmon_i012band
+  oracle 12909  1260  1 01:33:26 pts/18    0:00 /sbin/sh -c ps -ef|grep mmon
+
+SQL>
+SQL>
+SQL> alter system disable restricted session;alter system disable restricted session;
+
+SQL> alter system disable restricted session;
+
+System altered.
+
+SQL> !ps -ef|grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        42631:42 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 25252     1  0  Sep 10  ?        52:48 ora_mmon_igdb
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 15263  1260  0 01:33:47 pts/18    0:00 /sbin/sh -c ps -ef|grep -i mmon
+  oracle 48729     1  0  Dec  5  ?         0:42 ora_mmon_i012band
+  oracle 15265 15263  0 01:33:47 pts/18    0:00 grep -i mmon
+
+SQL> def
+DEFINE _DATE           = "20211209" (CHAR)
+DEFINE _CONNECT_IDENTIFIER = "sbivvrt" (CHAR)
+DEFINE _USER           = "SYS" (CHAR)
+DEFINE _PRIVILEGE      = "AS SYSDBA" (CHAR)
+DEFINE _SQLPLUS_RELEASE = "1202000100" (CHAR)
+DEFINE _EDITOR         = "vi" (CHAR)
+DEFINE _O_VERSION      = "Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production" (CHAR)
+DEFINE _O_RELEASE      = "1202000100" (CHAR)
+DEFINE _RC             = "0" (CHAR)
+SQL>
+SQL>
+SQL> alter system enable restricted session;alter system enable restricted session;
+
+SQL>
+SQL>
+SQL> alter system enable restricted session;alter system enable restricted session;
+
+SQL>
+SQL>
+SQL> alter system enable restricted session;
+
+System altered.
+
+SQL>
+SQL>
+SQL> alter system disable restricted session;
+
+System altered.
+
+SQL> !ps -ef|grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        42632:17 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        38:59 ora_mmon_vvrtstub
+  oracle 18395     1 19 01:34:24 ?         0:00 ora_mmon_sbivvrt
+  oracle 25252     1  0  Sep 10  ?        52:48 ora_mmon_igdb
+  oracle 51203     1  0  Nov  7  ?         5:02 asm_mmon_+ASM
+  oracle 48729     1  0  Dec  5  ?         0:43 ora_mmon_i012band
+  oracle 19849  1260  1 01:34:35 pts/18    0:00 /sbin/sh -c ps -ef|grep -i mmon
+  oracle 19855 19849  0 01:34:35 pts/18    0:00 grep -i mmon
+
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#sqlplus / as sysdba
+
+SQL*Plus: Release 12.2.0.1.0 Production on Thu Dec 9 01:34:51 2021
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL>
+SQL>
+SQL>
+SQL> execute dbms_workload_repository.create_snapshot;
+
+PL/SQL procedure successfully completed.
+
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL> @?/rdbms/admin/awrrpt.sqk
+SP2-0310: unable to open file "/oracle_12C/app/oracle/product/12.2/rdbms/admin/awrrpt.sqk"
+SQL> @?/rdbms/admin/awrrpt.sql
+
+Specify the Report Type
+~~~~~~~~~~~~~~~~~~~~~~~
+AWR reports can be generated in the following formats.  Please enter the
+name of the format at the prompt.  Default value is 'html'.
+
+'html'          HTML format (default)
+'text'          Text format
+'active-html'   Includes Performance Hub active report
+
+Enter value for report_type:
+old   1: select 'Type Specified: ',lower(nvl('&&report_type','html')) report_type from dual
+new   1: select 'Type Specified: ',lower(nvl('','html')) report_type from dual
+
+Type Specified:  html
+
+old   1: select '&&report_type' report_type_def from dual
+new   1: select 'html' report_type_def from dual
+
+
+
+old   1: select '&&view_loc' view_loc_def from dual
+new   1: select 'AWR_PDB' view_loc_def from dual
+
+
+
+Current Instance
+~~~~~~~~~~~~~~~~
+DB Id          DB Name        Inst Num       Instance       Container Name
+-------------- -------------- -------------- -------------- --------------
+   51883453     SBIVVRT                     1 sbivvrt        sbivvrt
+
+
+
+
+
+
+
+
+
+
+
+Instances in this Workload Repository schema
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  DB Id      Inst Num   DB Name      Instance     Host
+------------ ---------- ---------    ----------   ------
+  51883453       1      SBIVVRT      sbivvrt      sbirefpr2
+  51883453       1      SBIVVRT      sbivvrt      SBIARCPR
+  51883453       1      SBIVVRT      sbivvrt      pawana
+  51883453       1      SBIVVRT      sbivvrt      archsbidr
+  51883453       1      SBIVVRT      sbivvrt      sbidbnr4
+  51883453       1      SBIVVRT      sbivvrt      CBSFDBPR
+  51883453       1      SBIVVRT      sbivvrt      cbsdrdb4
+  51883453       1      SBIVVRT      sbivvrt      VVRDBNR
+  51883453       1      SBIVVRT      sbivvrt      ARCHSBIDR
+  51883453       1      SBIVVRT      sbivvrt      sbiarchnr
+  51883453       1      SBIVVRT      sbivvrt      CBSFAPPR
+* 51883453       1      SBIVVRT      sbivvrt      VVRDBPR
+
+Using 51883453 for database Id
+Using          1 for instance number
+
+
+Specify the number of days of snapshots to choose from
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Entering the number of days (n) will result in the most recent
+(n) days of snapshots being listed.  Pressing <return> without
+specifying a number lists all completed snapshots.
+
+
+Enter value for num_days: 1
+
+Listing the last day's Completed Snapshots
+Instance     DB Name      Snap Id       Snap Started    Snap Level
+------------ ------------ ---------- ------------------ ----------
+
+sbivvrt      SBIVVRT         147203  09 Dec 2021 01:34    1
+                             147204  09 Dec 2021 01:35    1
+
+
+Specify the Begin and End Snapshot Ids
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Enter value for begin_snap:
+
+SQL>
+SQL>
+SQL>
+SQL>  execute dbms_workload_repository.create_snapshot;
+SQL>
+SQL>
+SQL>
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#sqlplus / as sysdba
+
+SQL*Plus: Release 12.2.0.1.0 Production on Thu Dec 9 01:37:15 2021
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL> execute dbms_workload_repository.create_snapshot;
+
+PL/SQL procedure successfully completed.
+
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=====================================
+
+
+
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#
+oracle@VVRDBPR:/home/oracle#sqlplus / as sysdba
+
+SQL*Plus: Release 12.2.0.1.0 Production on Thu Jan 6 00:14:07 2022
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+
+SQL> def
+DEFINE _DATE           = "20220106" (CHAR)
+DEFINE _CONNECT_IDENTIFIER = "sbivvrt" (CHAR)
+DEFINE _USER           = "SYS" (CHAR)
+DEFINE _PRIVILEGE      = "AS SYSDBA" (CHAR)
+DEFINE _SQLPLUS_RELEASE = "1202000100" (CHAR)
+DEFINE _EDITOR         = "vi" (CHAR)
+DEFINE _O_VERSION      = "Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production" (CHAR)
+DEFINE _O_RELEASE      = "1202000100" (CHAR)
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL>
+SQL> grant restricted session to public;
+
+Grant succeeded.
+
+SQL>
+SQL> alter system enable restricted session;
+
+
+System altered.
+
+SQL> SQL>
+SQL>
+SQL>
+SQL>
+SQL> set timeon timing on
+SP2-0158: unknown SET option "timeon"
+SQL>
+SQL> set time on timing on
+00:20:20 SQL>
+00:20:20 SQL>
+00:20:21 SQL>
+00:20:21 SQL>
+00:20:31 SQL>
+00:20:31 SQL>
+00:20:31 SQL> alter system disable restricted session;
+
+System altered.
+
+Elapsed: 00:00:00.25
+00:20:35 SQL>
+00:20:36 SQL>
+00:20:36 SQL>
+00:20:36 SQL>
+00:20:36 SQL>
+00:20:42 SQL>
+00:20:42 SQL> revoke restricted session from public;
+
+Revoke succeeded.
+
+Elapsed: 00:00:00.00
+00:20:43 SQL>
+00:20:44 SQL>
+00:20:44 SQL> !ps -ef|grep -i mmon
+  oracle  8376  8258  0  Sep  9  ?        72360:17 /OEM/Agent_13c/agent_13.4.0.0.0/oracle_common/jdk/bin/IA64W/java -Xmx128M -XX:MaxMetaspaceSize=224M -server -Djava.security.egd
+  oracle 27155     1  0  Sep 18  ?        53:48 ora_mmon_vvrtstub
+  oracle 25252     1  0  Sep 10  ?        73:15 ora_mmon_igdb
+  oracle  6716  6714  0 00:20:50 pts/9     0:00 grep -i mmon
+  oracle 59431     1  1 00:18:50 ?         0:00 ora_mmon_sbivvrt
+  oracle 51203     1  0  Nov  7  ?         9:16 asm_mmon_+ASM
+  oracle  3048     1  0  Dec 25  ?         1:42 ora_mmon_i012band
+  oracle  6714 44836  0 00:20:50 pts/9     0:00 /sbin/sh -c ps -ef|grep -i mmon
+
+00:20:50 SQL>
+00:20:55 SQL>
+00:20:56 SQL>
+00:20:56 SQL>
+00:20:56 SQL>
+00:21:01 SQL>
+00:21:01 SQL>
+00:21:01 SQL> def
+DEFINE _DATE           = "20220106" (CHAR)
+DEFINE _CONNECT_IDENTIFIER = "sbivvrt" (CHAR)
+DEFINE _USER           = "SYS" (CHAR)
+DEFINE _PRIVILEGE      = "AS SYSDBA" (CHAR)
+DEFINE _SQLPLUS_RELEASE = "1202000100" (CHAR)
+DEFINE _EDITOR         = "vi" (CHAR)
+DEFINE _O_VERSION      = "Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production" (CHAR)
+DEFINE _O_RELEASE      = "1202000100" (CHAR)
+DEFINE _RC             = "0" (CHAR)
+00:21:02 SQL>
+00:21:02 SQL>
+00:21:02 SQL>
+00:21:02 SQL>
+00:21:02 SQL>
+00:21:03 SQL> execute dbms_workload_repository.create_snapshot;
+
+PL/SQL procedure successfully completed.
+
+Elapsed: 00:00:07.84
+00:21:15 SQL>
+00:21:46 SQL>
+00:21:47 SQL>
+00:21:47 SQL>
+00:21:47 SQL>
+00:22:10 SQL>
+00:22:10 SQL> def
+DEFINE _DATE           = "20220106" (CHAR)
+DEFINE _CONNECT_IDENTIFIER = "sbivvrt" (CHAR)
+DEFINE _USER           = "SYS" (CHAR)
+DEFINE _PRIVILEGE      = "AS SYSDBA" (CHAR)
+DEFINE _SQLPLUS_RELEASE = "1202000100" (CHAR)
+DEFINE _EDITOR         = "vi" (CHAR)
+DEFINE _O_VERSION      = "Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production" (CHAR)
+DEFINE _O_RELEASE      = "1202000100" (CHAR)
+DEFINE _RC             = "0" (CHAR)
+00:22:11 SQL>
+00:22:11 SQL>
+
