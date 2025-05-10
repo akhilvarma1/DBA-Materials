@@ -1,0 +1,98 @@
+File #8511 added to control file as 'UNNAMED08511' because
+the parameter STANDBY_FILE_MANAGEMENT is set to MANUAL
+The file should be manually created to continue.
+Errors with log +DG_ARCHIVAL_XP7/I012BAND_NR/ARCHIVELOG/2023_04_11/thread_4_seq_24138.12869.1133897457
+MRP0: The following warnings/errors are found:
+ORA-01274: cannot add data file that was originally created as '+DG_I012BAND_DB_XP8/I012BAND/DATAFILE/tsidx_100m_b.8911.1133897099'
+Multi Instance Redo Apply terminaed with error 1274
+2023-04-11T20:13:44.298490+05:30
+Errors in file /sbi_bancs_trace/diag/rdbms/i012band_nr/i112racd/trace/i112racd_pr00_53908.trc:
+ORA-01274: cannot add data file that was originally created as '+DG_I012BAND_DB_XP8/I012BAND/DATAFILE/tsidx_100m_b.8911.1133897099'
+MIRA: Mark controlfile recovery error occurred
+2023-04-11T20:13:44.315885+05:30
+
+
+
+
+File 8511 not verified due to error ORA-01157
+2023-04-11T21:16:00.329815+05:30
+Successfully added datafile 8512 to media recovery
+Datafile #8512: '+DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8909.1133903731'
+2023-04-11T21:16:38.351500+05:30
+PR00 (PID:2196): Media Recovery Log +DG_ARCHIVAL_XP7/I012BAND_NR/ARCHIVELOG/2023_04_11/thread_4_seq_24139.4335.1133898001
+2023-04-11T21:16:39.506079+05:30
+ALTER DATABASE RECOVER MANAGED STANDBY DATABASE CANCEL
+2023-04-11T21:16:39.588333+05:30
+
+
+File #8511 added to control file as 'UNNAMED08511' because
+
+
+
+ to '+DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8911.1133897099
+
+alter database create datafile '/oracle_19c/app/oracle/product/19.3/dbs/UNNAMED08511' as '+DG_I012BAND_DB_XP8'  size 31990m;
+
+
+2023-04-11T21:20:46.089939+05:30
+ Dwn-cvts replayed, VALBLKs dubious
+ All grantable enqueues granted
+2023-04-11T21:20:47.019997+05:30
+PR00 (PID:41546): MRP0: Background Media Recovery terminated with error 1110
+2023-04-11T21:20:47.020365+05:30
+Errors in file /sbi_bancs_trace/diag/rdbms/i012band_nr/i112racd/trace/i112racd_pr00_41546.trc:
+ORA-01110: data file 8511: '+DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8910.1133903861'
+ORA-01157: cannot identify/lock data file 8511 - see DBWR trace file
+ORA-01110: data file 8511: '+DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8910.1133903861'
+2023-04-11T21:20:47.033406+05:30
+.... (PID:22001): Managed Standby Recovery not using Real Time Apply
+2023-04-11T21:20:48.047730+05:30
+Completed: ALTER DATABASE RECOVER MANAGED STANDBY DATABASE DISCONNECT FROM SESSION parallel 128
+2023-04-11T21:20:50.686838+05:30
+Reconfiguration complete (total time 6.0 secs)
+Decreasing priority of 30 RS
+
+
+select * from v$recover_file where error like '%FILE%';
+
+
+
+alter database rename file '+DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8910.1133903861' to '+DG_I012BAND_DB_XP8/I012BAND/DATAFILE/tsidx_100m_b.8911.1133897099';
+
+SQL> select file#,name from v$datafile where file#=8511;
+
+     FILE# NAME
+---------- -----------------------------------------------------------------------------------------------
+      8511 +DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8910.1133903861
+
+SQL> select file#,name from v$datafile where file#=8512;
+
+     FILE# NAME
+---------- -----------------------------------------------------------------------------------------------
+      8512 +DG_I012BAND_DB_XP8/I012BAND_NR/DATAFILE/tsidx_100m_b.8909.1133903731
+
+SQL>
+
+
+run
+{
+Copy datafile '+DG_I012BAND_DB_XP8/I012BAND/DATAFILE/tsidx_100m_b.8911.1133897099'  to '/os_watcher/datafile_bkp/8511.dbf' ;
+Copy datafile '+DG_I012BAND_DB_XP8/I012BAND/DATAFILE/tsidx_100m_b.8912.1133897393'  to '/os_watcher/datafile_bkp/8512.dbf' ;
+}
+
+
+catalog start with '/os_watcher/datafile_bkp';
+
+run
+{
+set newname for datafile 8511 to '+DG_I012BAND_DB_XP8'; 
+restore datafile 8511;
+}
+
+run
+{
+set newname for datafile 8512 to '+DG_I012BAND_DB_XP8'; 
+restore datafile 8512;
+}
+
+switch datafile 8511,8512 to copy;
