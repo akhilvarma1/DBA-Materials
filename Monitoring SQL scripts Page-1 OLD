@@ -1,0 +1,346 @@
+Database Info -
+
+set lines 200 pages 200
+col name format a20
+col db_name format a20
+col log_mode format a12
+col  open_mode format a12
+
+col version for a10
+col HOST_NAME for a15
+set lines 200
+colu db_name format a15
+colu StartTime format a20
+colu SysDateTime format a20
+select to_char(startup_time,'DD-MM-YYYY HH24:MI:SS') StartTime, to_char(sysdate,'DD-MM-YYYY HH24:MI:SS') SysDateTime, name db_name,log_mode, open_mode,DATABASE_ROLE,SWITCHOVER_STATUS, HOST_NAME , VERSION from dual, v$database, gv$instance;
+
+***************************************************************************************************************************************************************************************
+act_sess-
+
+set pages 3000
+ set lines 200
+ col L_C_E for 9999
+ col sql_text for a47
+ col machine for a12
+ col event for a15
+ col osuser for a15
+ col spid for a10
+ col sid for 99999
+ col SERIAL# for 99999
+ col username for a10
+ select distinct last_call_et L_C_E,osuser,s.username,sid,s.SERIAL#,s.status, p.spid,event,s.machine, sql_text,s.sql_id from v$session s ,v$sql q, v$process p
+ where sql_hash_value=hash_value(+)
+ and status='ACTIVE'
+ and s.paddr = p.addr
+ and s.username is not null
+ and type <> 'BACKGROUND'
+order by last_call_et desc;
+
+***************************************************************************************************************************************************************************************
+
+ASM DISK  -
+
+SELECT name, total_mb/1024/1024 as Total_TB, free_mb/1024/1024 as Free_TB, free_mb/total_mb*100 as percentage_free,round(((total_mb-nvl(free_mb,0))/total_mb)*100,0) percent_used from v$asm_diskgroup;
+
+SELECT name, total_mb/1024/1024 as Total_TB, free_mb/1024/1024 as Free_TB from v$asm_diskgroup;
+
+***************************************************************************************************************************************************************************************
+
+long running sql -
+
+set pages 300 lines 300
+set time on
+col opname format a20
+col target format a15
+col units format a10
+col time_remaining format 99990 heading Remaining[s]
+col bps format 9990.99 heading [Units/s]
+col fertig format 90.99 heading "complete[%]"
+select QCSID, sid,opname,target,sofar,totalwork,units,(totalwork-sofar)/time_remaining bps,time_remaining,sofar/totalwork*100 fertig from v$session_longops where  time_remaining > 0;
+
+
+
+
+
+***************************************************************************************************************************************************************************************
+
+select owner, segment_type, sum(bytes/1024/1024/1024) as Size_In_GB from dba_segments where segment_type like 'TEMP%' group by owner,  segment_type;
+
+***************************************************************************************************************************************************************************************
+Temp usage - 
+select a.tablespace_name tablespace, d.TEMP_TOTAL_GB,
+sum (a.used_blocks * d.block_size) /1024/1024/1024 TEMP_USED_GB, d.TEMP_TOTAL_GB - sum (a.used_blocks * d.block_size) /1024/1024/1024 TEMP_FREE_GB
+from v$sort_segment a,
+(select b.name, c.block_size, sum (c.bytes) /1024/1024/1024 TEMP_TOTAL_GB from v$tablespace b, v$tempfile c
+where b.ts#= c.ts# group by b.name, c.block_size ) d where a.tablespace_name = d.name group by a.tablespace_name, d.TEMP_TOTAL_GB;
+
+Temp usage by sessions running -
+col SID_SERIAL for a10
+col OSUSER for a10
+col MODULE for a30
+col PROGRAM for a25
+SELECT S.sid || ',' || S.serial# sid_serial, S.username, S.osuser, P.spid, S.module, P.program, SUM (T.blocks) * TBS.block_size /1024/1024/1024 Gb_used, T.tablespace, COUNT(*) statements FROM v$sort_usage T, v$session S, dba_tablespaces TBS, v$process P WHERE T.session_addr = S.saddr AND S.paddr = P.addr AND T.tablespace = TBS.tablespace_name GROUP BY S.sid, S.serial#, S.username, S.osuser, P.spid, S.module, P.program, TBS.block_size, T.tablespace ORDER BY Gb_used desc;
+
+
+
+***************************************************************************************************************************************************************************************
+Tablespace -
+
+alter session force parallel query;
+set line 200
+set pages 200
+select distinct a.tablespace_name, SUM(a.bytes)/1024/1024/1024 "Used Size GB", SUM(decode(b.maxextend, null, A.BYTES/1024/1024/1024, b.maxextend*8192/1024/1024/1024))
+"Max Size gb",(SUM(a.bytes)/1024/1024/1024 - round(c."Free"/1024/1024/1024)) "Total Used GB", (SUM(decode(b.maxextend, null, A.BYTES/1024/1024/1024,
+b.maxextend*8192/1024/1024/1024)) - (SUM(a.bytes)/1024/1024/1024 - round(c."Free"/1024/1024/1024))) "Total Free GB", round(100*(SUM(a.bytes)/1024/1024/1024 - round
+(c."Free"/1024/1024/1024))/(SUM(decode(b.maxextend, null, A.BYTES/1024/1024/1024, b.maxextend*8192/1024/1024/1024)))) "Used Percentage" from dba_data_files
+a,sys.filext$ b, (SELECT d.tablespace_name , sum(nvl(c.bytes,0)) "Free" FROM dba_tablespaces d,DBA_FREE_SPACE c where d.tablespace_name = c.tablespace_name(+) group by
+d.tablespace_name) c where a.file_id = b.file#(+) and a.tablespace_name = c.tablespace_name  GROUP by a.tablespace_name, c."Free"/1024 order by round(100*(SUM
+(a.bytes)/1024/1024/1024 - round(c."Free"/1024/1024/1024))/(SUM(decode(b.maxextend, null, A.BYTES/1024/1024/1024, b.maxextend*8192/1024/1024/1024)))) desc;
+
+***************************************************************************************************************************************************************************************
+Datafile  -
+
+col FILE_NAME for a95
+select FILE_NAME,TABLESPACE_NAME,BYTES/1024/1024/1024,STATUS,AUTOEXTENSIBLE,MAXBYTES/1024/1024/1024 from dba_data_files where TABLESPACE_NAME='&tbs';
+
+***************************************************************************************************************************************************************************************
+wait -
+
+col event for a40
+col wait_class for a30
+col SID_SERIAL for a20
+Select sid||','|| serial# "SID_SERIAL",blocking_session,event, wait_class,seconds_in_wait
+From v$session
+where blocking_session is not NULL
+order by blocking_session;
+***************************************************************************************************************************************************************************************
+rman -
+
+select STATUS,to_char(START_TIME,'mm-dd-yyyy hh24:mi:ss') "START_TIME",to_char(END_TIME,'dd-mm-yyyy hh24:mi:ss') "END_TIME",TIME_TAKEN_DISPLAY "TOTAL_TIME" from v$rman_backup_job_details
+where START_TIME > (select sysdate-20 from dual)
+order by 2;
+
+***************************************************************************************************************************************************************************************
+
+Object Lock -
+
+select lo.session_id,lo.oracle_username,lo.os_user_name,
+lo.process,do.object_name,
+decode(lo.locked_mode,0, 'None',1, 'Null',2, 'Row Share (SS)',
+3, 'Row Excl (SX)',4, 'Share',5, 'Share Row Excl (SSX)',6, 'Exclusive',
+to_char(lo.locked_mode)) mode_held
+from gv$locked_object lo, dba_objects do
+where lo.object_id = do.object_id
+order by 1,5
+/
+
+***************************************************************************************************************************************************************************************
+arch_hourly
+
+col 00 for a4
+col 01 for a4
+col 02 for a4
+col 03 for a4
+col 04 for a4
+col 05 for a4
+col 06 for a4
+col 07 for a4
+col 08 for a4
+col 09 for a4
+col 10 for a4
+col 11 for a4
+col 12 for a4
+col 13 for a4
+col 14 for a4
+col 15 for a4
+col 16 for a4
+col 17 for a4
+col 18 for a4
+col 19 for a4
+col 20 for a4
+col 21 for a4
+col 22 for a4
+col 23 for a4
+
+
+SELECT to_date(first_time) DAY,
+to_char(sum(decode(to_char(first_time,'HH24'),'00',1,0)),'999') "00",
+to_char(sum(decode(to_char(first_time,'HH24'),'01',1,0)),'999') "01",
+to_char(sum(decode(to_char(first_time,'HH24'),'02',1,0)),'999') "02",
+to_char(sum(decode(to_char(first_time,'HH24'),'03',1,0)),'999') "03",
+to_char(sum(decode(to_char(first_time,'HH24'),'04',1,0)),'999') "04",
+to_char(sum(decode(to_char(first_time,'HH24'),'05',1,0)),'999') "05",
+to_char(sum(decode(to_char(first_time,'HH24'),'06',1,0)),'999') "06",
+to_char(sum(decode(to_char(first_time,'HH24'),'07',1,0)),'999') "07",
+to_char(sum(decode(to_char(first_time,'HH24'),'08',1,0)),'999') "08",
+to_char(sum(decode(to_char(first_time,'HH24'),'09',1,0)),'999') "09",
+to_char(sum(decode(to_char(first_time,'HH24'),'10',1,0)),'999') "10",
+to_char(sum(decode(to_char(first_time,'HH24'),'11',1,0)),'999') "11",
+to_char(sum(decode(to_char(first_time,'HH24'),'12',1,0)),'999') "12",
+to_char(sum(decode(to_char(first_time,'HH24'),'13',1,0)),'999') "13",
+to_char(sum(decode(to_char(first_time,'HH24'),'14',1,0)),'999') "14",
+to_char(sum(decode(to_char(first_time,'HH24'),'15',1,0)),'999') "15",
+to_char(sum(decode(to_char(first_time,'HH24'),'16',1,0)),'999') "16",
+to_char(sum(decode(to_char(first_time,'HH24'),'17',1,0)),'999') "17",
+to_char(sum(decode(to_char(first_time,'HH24'),'18',1,0)),'999') "18",
+to_char(sum(decode(to_char(first_time,'HH24'),'19',1,0)),'999') "19",
+to_char(sum(decode(to_char(first_time,'HH24'),'20',1,0)),'999') "20",
+to_char(sum(decode(to_char(first_time,'HH24'),'21',1,0)),'999') "21",
+to_char(sum(decode(to_char(first_time,'HH24'),'22',1,0)),'999') "22",
+to_char(sum(decode(to_char(first_time,'HH24'),'23',1,0)),'999') "23"
+from
+v$log_history
+where to_date(first_time) > sysdate -8
+GROUP by
+to_char(first_time,'YYYY-MON-DD'), to_date(first_time)
+order by to_date(first_time)
+/
+
+*******************************************************************************************************************************************************************************************************
+Journal Table - https://oraclehandson.wordpress.com/2012/09/12/online-index-rebuild-fails-with-ora-08106-cannot-create-journal-table/
+
+ORA-08106: cannot create journal table  ==> Doc ID 247487.1
+
+====>  Check table present in JOURNAL
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+col OWNER for a35
+col OBJECT_NAME for a35
+select OWNER, OBJECT_NAME, CREATED, OBJECT_ID from dba_objects  where object_name like 'SYS_JOURNAL%';
+
+====>   Drop Journal table
+
+drop table username.tablename;
+
+====>   Clear Journal entry
+declare
+isclean boolean;
+begin
+isclean := false;
+while isclean = false
+loop
+isclean := DBMS_REPAIR.ONLINE_INDEX_CLEAN 
+(dbms_repair.all_index_id, dbms_repair.lock_wait);
+dbms_lock.sleep (10);
+end loop;
+end;
+/
+
+*******************************************************************************************************************************************************************************************************
+SET SERVEROUTPUT ON
+DECLARE
+   isClean BOOLEAN;
+BEGIN
+  isClean := FALSE;
+WHILE isClean=FALSE
+   LOOP
+     isClean := DBMS_REPAIR.ONLINE_INDEX_CLEAN(DBMS_REPAIR.ALL_INDEX_ID, DBMS_REPAIR.LOCK_WAIT);
+  END LOOP;
+EXCEPTION
+WHEN OTHERS THEN
+RAISE;
+END;
+/
+
+
+*******************************************************************************************************************************************************************************************************
+MRP / RFS check
+
+select distinct(process) ,status, sequence#, thread# , block# ,blocks from v$managed_standby where process in ('RFS','MRP0');
+
+Sync status -
+
+prompt PR Sequence
+select a.thread#, max(a.sequence#) from v$archived_log a join v$database_incarnation b using (resetlogs_id ) where b.status = 'CURRENT' group by thread# order by thread#;
+
+prompt NR Sequence
+select a.thread#, max(a.sequence#) from v$archived_log a join v$database_incarnation b using (resetlogs_id ) where b.status = 'CURRENT' and a.applied='YES' group by thread# order by thread#;
+
+from dataguard_process
+select INST_ID,NAME,ACTION,THREAD#,SEQUENCE#,BLOCK# from gv$dataguard_process where ACTION='APPLYING_LOG' order by 4;
+
+*******************************************************************************************************************************************************************************************************
+Validate registry
+
+execute sys.dbms_registry.valid('XDB');
+@?/rdbms/admin/catproc.sql
+
+*******************************************************************************************************************************************************************************************************
+
+set lines 1000 pages 800
+col segment_name for a20
+col PARTITION_NAME for a20
+col OWNER for a20
+col SUBOBJECT_NAME for a20
+select a.segment_name, a.segment_type,a.owner ,a.partition_name,a.bytes/1024/1024/1024,a.tablespace_name, b.OBJECT_ID,b.DATA_OBJECT_ID from dba_segments a, dba_objects b where a.partition_name(+)=b.SUBOBJECT_NAME and partition_name like 'INCT%&n%' order by 1;
+*******************************************************************************************************************************************************************************************************
+Query to check stale_stats and size 
+
+col PARTITION_NAME for a30
+col OWNER for a30
+col TABLE_NAME for a30
+select b.partition_name, b.owner, b.table_name,b.stale_stats, a.bytes/1024/1024/1024 from dba_segments a, dba_tab_statistics b where b.partition_name(+)=a.partition_name and b.stale_stats='YES' and b.owner='FNSONLI' order by 5;
+
+alter session force parallel query;
+exec dbms_stats.gather_table_stats(ownname=>'FNSONLI',tabname=>'GECT',partname=>'GECT_001',granularity=>'PARTITION',CASCADE=> true,estimate_percent=>dbms_stats.auto_sample_size,degree=>32);
+
+*******************************************************************************************************************************************************************************************************
+Dynamic script to kill sessions in RAC
+
+select 'alter system kill session '''||sid||','||serial#||',@'||inst_id||''' immediate;' from gv$session where sql_id='' and username='SYS';
+
+*******************************************************************************************************************************************************************************************************
+col OWNER for a30
+col TABLE_OWNER for a30
+col TABLE_NAME for a30
+col PARTITION_NAME for a30
+select TABLE_OWNER,TABLE_NAME,PARTITION_NAME,LAST_ANALYZED from dba_tab_partitions where  LAST_ANALYZED not like '2024%' and TABLE_OWNER='FNSONLI' and TABLE_NAME not like '%/_%' ESCAPE '/';
+
+select OWNER,TABLE_NAME,PARTITIONED,TABLESPACE_NAME,LAST_ANALYZED from dba_tables where OWNER='FNSONLI' and LAST_ANALYZED not  like '2024%' and TABLE_NAME not like '%/_%' ESCAPE '/' and PARTITIONED='NO';
+
+***************************************************** DYNAMIC QUERY *******************************************************************************************************
+select 'exec dbms_stats.gather_table_stats(ownname=>'||''''||TABLE_OWNER||''''||',tabname=>'||''''||table_name||''''||',partname=>'||''''||PARTITION_NAME||''''||',granularity=>''PARTITION'', CASCADE=> true, estimate_percent=>20, degree=>32);' from dba_tab_partitions where  LAST_ANALYZED not like '2024%' and TABLE_OWNER='FNSONLI' and TABLE_NAME not like '%/_%' ESCAPE '/';
+
+*******************************************************************************************************************************************************************************************************
+DWP sequence required -
+
+
+select * from fnsonli.edwh where BSS_DATE = '202301114';   ==> EOD DATE
+select  distinct(sequence#) , thread# from v$archived_log where 7505759399967 between FIRST_CHANGE# and NEXT_CHANGE#-1 order by 2;  ==> Sequence No.
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+col name for a95
+select NAME,BLOCKS/1024/1024,THREAD#,SEQUENCE#,COMPLETION_TIME from v$archived_log where SEQUENCE#=34181 and thread#=1;
+
+-- Query to check apply time required for log to apply on standby database
+select b.lhseq sequence#, b.lhtsm fromtime, a.lhtsm totime,
+ ((to_date(a.lhtsm,'MM/DD/RR HH24:MI:SS') - 
+   to_date(b.lhtsm,'MM/DD/RR HH24:MI:SS')) * 1440) minutes_to_apply
+  from sys.x$kcclh a, sys.x$kcclh b
+ where a.lhrid = b.lhrid + 1 and b.lhseq='13964'
+ order by a.lhrid;
+
+***************************************************************************************************************************************************************************************
+Alert Monitoring
+
+while true
+do
+tail -500 /oracle_19c/app/oracle/diag/rdbms/dbrept/dbrept1/trace/alert_dbrept1.log |grep -i 'ORA-00600\|ORA-01555\|ORA-00700'
+date
+echo ========= EVERY 1 minutes check ============
+sleep 60
+done
+
+***************************************************************************************************************************************************************************************
+
+select dbms_metadata.get_ddl('ROLE', 'ROLE_SBITEAM') from dual;
+
+select dbms_metadata.get_granted_ddl('ROLE_GRANT', 'ROLE_SBITEAM') from dual;
+
+***************************************************************************************************************************************************************************************
+To remove junk character ^M from file -
+
+Using a terminal editor vi or vim:
+Inside vi [in ESC mode] type: :%s/^M//g
+Note: To enter ^M, type CTRL-V + M. That is, hold down the CTRL key then press V and M in succession.
+***************************************************************************************************************************************************************************************
