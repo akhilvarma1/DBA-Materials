@@ -1,0 +1,55 @@
+
+How to Multiplex Control File In RAC Database (Doc ID 1642374.1) Incase of any confusing refer metalink
+
+Check Controlfile name -
+select name from v$controlfile;
+
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------------------------------------
+spfile                               string      +DG_I012BAND_DB_XP7/I012BAND/PARAMETERFILE/spfile.8136.1109431179
+
+
+upadte controlfile in spfile as suggested below
+alter system set control_files='+DG_I012BAND_DB_XP7/I012BAND/CONTROLFILE/current.256.1109305567','+DG_I012BAND_REDO' scope=spfile;
+
+stop database 
+srvctl status database -d I012BAND
+srvctl stop database -d I012BAND
+
+start database in mount state and connect to rman
+
+oracle@cbsprdb1:/home/oracle#rman target /
+
+Recovery Manager: Release 19.0.0.0.0 - Production on Fri Jul 8 22:06:49 2022
+Version 19.11.0.0.0
+
+Copyright (c) 1982, 2019, Oracle and/or its affiliates.  All rights reserved.
+
+connected to target database: I012BAND (not mounted)
+
+RMAN> restore controlfile from '+DG_I012BAND_DB_XP7/I012BAND/CONTROLFILE/current.256.1109305567';
+
+Starting restore at 08-JUL-22
+using target database control file instead of recovery catalog
+allocated channel: ORA_DISK_1
+channel ORA_DISK_1: SID=5521 instance=i112racd device type=DISK
+
+channel ORA_DISK_1: copied control file copy
+output file name=+DG_I012BAND_DB_XP7/I012BAND/CONTROLFILE/current.256.1109305567
+output file name=+DG_I012BAND_REDO/I012BAND/CONTROLFILE/current.594.1109542027
+Finished restore at 08-JUL-22
+
+
+check restored control files, there should be 2 locations in 'output file name='
+
+alter system set control_files='+DG_I012BAND_DB_XP7/I012BAND/CONTROLFILE/current.256.1109305567','+DG_I012BAND_REDO/I012BAND/CONTROLFILE/current.594.1109542027' scope=spfile;
+
+
+stop database
+start database 
+
+Check Controlfile name -
+select name from v$controlfile;
+
+
+
