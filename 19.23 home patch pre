@@ -1,0 +1,113 @@
+p 36199232 _190000_HPUX-IA64.zip
+p 36233263 _190000_HPUX-IA64.zip
+p 36420641 _1923000DBRU_Generic.zip
+p 36233126 _190000_HPUX-IA64.zip
+p 35383191 _1919000DBRU_Generic.zip
+p 36463251 _1923000DBRU_HPUX-IA64.zip
+p 36463219 _1923000DBRU_Generic.zip
+p 36480774 _1923000DBRU_HPUX-IA64.zip
+p 35778398 _1923000DBRU_HPUX-IA64.zip
+p 30065118 _1923000DBRU_HPUX-IA64.zip
+p 6880880 _122010_HPUX-IA64.zip
+
+
+Step 1 :-
+OPatch utility version 12.2.0.1.41 or later
+
+$ORACLE_HOME/OPatch/opatch version
+
+Step 2 :-
+
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36233126/36233263
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36233126/36240578
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36199232
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36420641
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36480774
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/35925654
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/30065118
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36285197
+$ORACLE_HOME/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -phBaseDir <UNZIPPED_PATCH_LOCATION>/36158909
+
+Step 3:-
+Run OPatch System Space Check
+Check if enough free space is available on the ORACLE_HOME filesystem for the patches to be applied as given below:
+Create file /tmp/patch_list_gihome.txt with the following content:
+
+vim /tmp/patch_list_gihome.txt
+<UNZIPPED_PATCH_LOCATION>/36233126/36233263
+<UNZIPPED_PATCH_LOCATION>/36233126/36240578
+<UNZIPPED_PATCH_LOCATION>/36199232/
+
+For RDBMS home, as home user:
+$ORACLE_HOME/OPatch/opatch prereq CheckSystemSpace -phBaseFile /tmp/patch_list_gihome.txt
+
+For GI home, as home user:
+$ORACLE_HOME/OPatch/opatch prereq CheckSystemSpace -phBaseFile /tmp/patch_list_gihome.txt
+
+Step 4:-
+Roll back 2 patches : -
+35235128;MERGE ON DATABASE RU 19.19.0.0.0 OF 34926045 => Rollback patch for 19.19
+$ORACLE_HOME/OPatch/opatch rollback -id 35235128
+
+30065118;ADD SUPPORT FOR SUB CENTI SECOND WAIT IN OSD => Rollback patch for 19.19 and reapply 19.23
+$ORACLE_HOME/OPatch/opatch rollback -id 30065118
+
+Step 5:-
+GRID Patch -
+
+<GRID_HOME>/crs/install/rootcrs.sh -prepatch
+
+Apply patch : -
+Patch 36233263: Database Release Update 19.23.0.0.240416
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36233126/36233263
+
+Patch 36240578: OCW Release Update 19.23.0.0.240416
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36233126/36240578
+
+Patch 36199232: OJVM RELEASE UPDATE 19.23.0.0.0
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36199232
+
+<GRID_HOME>/crs/install/rootcrs.sh -postpatch
+
+
+
+
+
+
+
+sindhu: /oracle_19C/app/oracle/product/19.0/OPatch > ./opatch lspatches
+35050341;OJVM RELEASE UPDATE: 19.19.0.0.230418 (35050341)
+35050331;OCW RELEASE UPDATE 19.19.0.0.0 (35050331)
+35042068; Release Update : 19.19.0.0.230418 (35042068)
+
+
+
+
+
+
+
+
+
+
+Step 6:-
+Apply below Datapump patches on top of 19.23 RU
+Patch 36420641: DATAPUMP BUNDLE PATCH 19.23.0.0.0
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36420641
+
+Step 7:-
+Apply below one-off patches on top of 19.23 RU
+
+Patch 36480774 [RECOVERY] Slow Opening of database in RAC database for other instance
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36480774
+
+Patch 35925654 - SCHE::SESSIONS DEADLOCK ON ROW CACHE MUTEX AND SHARED POOL LATCH)
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/35925654
+
+Patch 30065118: ADD SUPPORT FOR SUB CENTI SECOND WAIT IN OSD
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/30065118
+
+Patch 36285197 [RAC] ORA-4021: timeout occurred while waiting to lock object and/or Global Cache Performance Issues
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36285197
+
+Patch 36158909 [RAC] DB Hung Wating For 'log file switch (checkpoint incomplete)'
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/36158909
