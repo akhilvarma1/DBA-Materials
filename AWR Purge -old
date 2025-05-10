@@ -1,0 +1,29 @@
+oracle@cbsprdb2
+
+/home/oracle/SYSAUX_PURGE/SYSAUX_Purge.sh
+/home/oracle/SYSAUX_PURGE/Purge_cmd.sql
+***********************************************************************************************************************************************************
+
+export ORACLE_SID=i212racd
+sqlplus "/ as sysdba" << EOF
+spool /home/oracle/SYSAUX_PURGE/Log_260501_to_261501.log
+set time on timing on
+set echo on
+alter session force parallel query;
+alter session enable parallel dml;
+alter session enable parallel ddl;
+@/home/oracle/SYSAUX_PURGE/Purge_cmd.sql
+EOF
+exit
+
+
+vim Purge_cmd.sql
+
+BEGIN
+DBMS_WORKLOAD_REPOSITORY.drop_snapshot_range (
+low_snap_id => 260501,
+high_snap_id => 261501);
+END;
+/
+
+commit;
