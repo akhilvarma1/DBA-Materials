@@ -1,0 +1,47 @@
+Patching Steps -
+
+First replace OPatch directroy in $ORACLE_HOME path
+set $ORACLE_HOME either db home or grid home as per requirement
+
+
+DB Home Patch -
+
+<ORACLE_HOME>/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -ph <UNZIPPED_PATCH_LOCATION>/32218454  		
+<ORACLE_HOME>/OPatch/opatch apply -oh <ORACLE_HOME> -local <UNZIPPED_PATCH_LOCATION>/32218454
+
+./opatch prereq CheckConflictAgainstOHWithDetail -ph /os_watcher/GI_19_14_1_patch/33785101/33806138
+./opatch apply -oh /oracle_19c/app/oracle/product/19.3 -local /os_watcher/GI_19_14_1_patch/33785101/33806138
+
+
+
+Rollback Path -
+
+<ORACLE_HOME>/OPatch/opatch rollback -local -id 30955702 -oh <ORACLE_HOME>
+
+=================================================================================================================================================
+GRID Patch -
+
+<GRID_HOME>/crs/install/rootcrs.sh -prepatch
+
+<GRID_HOME>/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -ph <UNZIPPED_PATCH_LOCATION>/32218454  		
+<GRID_HOME>/OPatch/opatch apply -oh <GRID_HOME> -local <UNZIPPED_PATCH_LOCATION>/32218454
+
+<GRID_HOME>/crs/install/rootcrs.sh -postpatch
+
+./opatch lsinv -detail | grep -i 33457235
+
+
+fuser -cu /oracle_19C
+
+fuser -kcu /oracle_19C
+
+crsctl check crs
+crsctl staus
+crsctl stop crs
+
+
+
+
+
+
+
