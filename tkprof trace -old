@@ -1,0 +1,33 @@
+
+
+
+https://www.support.dbagenesis.com/post/oracle-tkprof-utility
+
+
+
+ALTER SESSION SET TIMED_STATISTICS=TRUE;
+ALTER SESSION SET SQL_TRACE=TRUE;
+
+
+tkprof ofnrdbb_ora_29770_From_Trigger.trc report_13.31.log
+
+/restore_point
+ALTER SESSION SET SQL_TRACE=FALSE;
+
+
+
+CREATE OR REPLACE TRIGGER SYS.set_trace
+AFTER LOGON ON DATABASE
+WHEN (USER like '&USERNAME')
+DECLARE
+lcommand varchar(200);
+BEGIN
+EXECUTE IMMEDIATE 'alter session set tracefile_identifier=''From_Trigger''';
+EXECUTE IMMEDIATE 'alter session set statistics_level=ALL';
+EXECUTE IMMEDIATE 'alter session set max_dump_file_size=UNLIMITED';
+EXECUTE IMMEDIATE 'alter session set events ''10046 trace name context forever, level 12''';
+END set_trace;
+/
+
+
+alter trigger SET_TRACE enable;
