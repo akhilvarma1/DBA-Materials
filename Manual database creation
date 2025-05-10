@@ -1,0 +1,496 @@
+#!/usr/bin/ksh
+#!/bin/sh
+# Purpose:
+#    To Create the database,make entry in /etc/oratab, tnsnames.ora and listener.ora file
+#
+# Usage:
+#         sh mithi_db_create.sh
+#
+# Author: Vignesh Subburaj
+# Update: Deepak Nanaware
+#
+# Date: 11 August 2016
+#
+# Version : v 1.0 initial version
+# Version : v 1.1 updated version
+
+#################### COLOR CODES ####################
+
+aqua='\033[1;36m'
+green='\033[1;32m'
+red='\033[1;31m'
+yellow='\033[1;33m'
+pink='\033[1;35m'
+brwhite='\033[1;37m'
+grwhite='\033[1;42m'
+rewhite='\033[1;41m'
+piwhite='\033[1;45m'
+aqwhite='\033[1;46m'
+yeblack='\033[33;6;7m'
+vilblack='\033[34;6;7m'
+greenblack='\033[32;6;7m'
+piblack='\033[35;6;7m'
+grblack='\033[39;6;7m'
+NC='\033[0m' # No Color
+
+#################### INITIAL LOAD #####################
+
+echo "${yellow} PLEASE WAIT ... INITIALIZING SCRIPT......KINDLY IGNORE THE INITIAL ERRORS, WAIT FOR MAIN SCREEN ${NC}"
+echo
+free_mem=`glance -aos /tmp/glan.syn -iterations 1 >/tmp/glan.txt; cat /tmp/glan.txt | tail -1 | awk -F"gb" '{print $1}'`
+echo
+
+#################### DG CHECK ####################
+#ORACLE_HOME=/oracle_19c_grid/app/oracle/product/19.3
+export ORACLE_SID=+ASM 2> /dev/null
+export ORAENV_ASK=NO
+. oraenv a 2 >/dev/null
+dg_mounted=`asmcmd -p lsdg | awk '{print "+"$NF}' | grep -vi name | cut -f1 -d"/"`
+dg_name_cnt=`echo $dg_mounted | grep -i $dg_name | wc -l' 2>/dev/null
+
+#################### USER INPUTS ####################
+clear
+tput bold
+echo
+echo "${rewhite}   MITHI GLIF DATABASE CREATION SCRIPT     ${NC}"
+echo
+echo "${brwhite}Enter the instance/db name to be created on 'hostname' Eg. glif16Q2: ${NC}"
+echo
+read db_name
+db_name_count=`echo $db_name | wc -m'
+if [[ $db_name = "" ]]
+then
+echo "${red}You have not entered any input, Pleaes Try Again${NC}"
+exit
+elif [ $db_name_count -ne 9 ]
+then
+echo
+echo "${red}You have entered a invalid Database Name, Pleaes Try Again${NC}"
+echo
+exit
+fi
+echo
+y=3
+while [ $y -gt 0 ]
+do
+echo "${yellow}$dg_mounted ${NC}"
+echo
+echo "${brwhite}Enter the ASM Diskgroup name for $db_name files to be created : ${NC}"
+echo
+read dg_name
+if [ 'echo $dg_name | grep \+ | wc -l' -ne 1 ]
+then
+echo
+clear
+echo "${rewhite}KINDLY SPECIFY THE DISK GROUP NAME WITH '+' SIGN${NC}"
+echo
+else
+echo
+echo "${yellow}Please wait.... Precheck is in progress${NC}"
+echo
+
+#################### DG CHECK 2 ####################
+
+export ORACLE_SID=+ASM 2> /dev/null
+export ORAENV_ASK=NO
+. oraenv a 2 >/dev/null
+dg_mounted=`asmcmd -p lsdg | awk '{print "+"$NF}' | grep -vi name | cut -f1 -d"/"`
+dg_name_without_plus=`echo $dg_name | cut -f2 -d"+"`
+dg_free_space_mb=`asmcmd -p lsdg | grep -i $dg_name_without_plus | awk '{print $8}' | grep -vi free'
+dg_free_space=`echo $dg_free_space_mb/1024 | bc'
+dg_name_cnt=`echo $dg_mounted | grep -w $dg_name_without_plus | wc -l'
+
+#################### PRE-CHECKS ####################
+
+mpnt_free=`bdf /oracle_19c | tail -1 | awk '{print $4}' | cut -f1 -d"%"`
+#free_mem=10
+
+if [ $free_mem -lt 5 ]
+then
+echo "${red}THERE IS NO ENOUGH FREE MEMORY. KINDLY MAKE SOME FREE MEMORY AND RE-RUN THE SCRIPT${NC}"
+echo
+echo "${yellow}CURRENT FREE MEMORY AVAILABLE IS : $free_mem GB${NC}"
+echo
+exit
+elif [ $mpnt_free -gt 95 ]
+then
+echo "${red}THERE IS NO ENOUGH FREE SPACE IN ORACLE MOUNT POINT. KINDLY MAKE SOME FREE SPACE AND RE-RUN THE SCRIPT${NC}"
+echo
+echo "${yellow}CURRENT FREE SPACE AVAILABLE IN /oracle_19c IS : $mpnt_free${NC}"
+echo
+exit
+elif [ $dg_name_cnt -ne 1 ]
+then
+echo "${red}SPECIFIED DISK GROUP IS EITHER NOT MOUNTER OR NOT AVAILABLE${NC}"
+echo
+exit
+elif [ $dg_free_space -lt 200 ]
+then
+echo "${red}SPECIFIED DISK GROUP IS DOES NOT HAVE ENOUGH FREE SPACE${NC}"
+echo
+echo "${yellow}CURRENT FREE SPACE AVAILABLE IN $dg_name : $dg_free_space GB${NC}                           >>>> CONTACT CDC-IDM TEAM FOR SPACE <<<<"
+echo
+exit
+fi
+echo "${brwhite}ENOUGH MEMORY AVAILABLE : $free_mem GB${NC}        ${green} ...... Passed"
+sleep 1
+echo
+echo "${brwhite}ENOUGH SPACE AVAILABLE IN ORACLE MOUNT POINT : $mpnt_free % USED${NC}   ${green} ...... Passed"
+sleep 1
+echo
+echo "${brwhite}$dg_name DISK GROUP IS MOUNTED   ${green}....... Passed${NC}"
+sleep 1
+echo
+echo "${brwhite}$dg_name DISK GROUP HAS $dg_free_space GB FREE SPACE AVAILABLE ${green}....... Passed${NC}"
+sleep 1
+echo
+echo "${yellow}DB NAME : $db_name"
+echo
+echo "DG_NAME : $dg_name${NC}"
+echo
+
+#################### ORATAB ENTRY ####################
+
+oratab_entry()
+{
+echo "$db_name:/oracle_19c/app/oracle/product/19.3:N       ## Added by mithi_db_create.sh script ##" >> /etc/oratab
+}
+
+#################### TNS ENTRY ####################
+
+tnsname()
+{
+last_port_used=`cat $ORACLE_HOME/network/admin/tnsnames.ora | grep -i port | tail -2 | grep 6095 | awk '{print $9}' | cut -f1 -d")"`
+next_port_final=`expr $last_port_used + 1'
+echo "${yellow}NOTE :- LAST PORT NUMBER USED IN TNSNAMES.ORA FILE : $last_port_used"
+echo "NOTE :- SUGGESTED NEXT PORT NUMBER : $next_port_final${NC}"
+echo
+echo "${brwhite}ENTER THE PORT NUMBER FOR LISTENER & TNSNAME : ${NC}"
+read port_no
+echo
+port_no_check=`cat $ORACLE_HOME/network/admin/tnsnames.ora | grep $port_no | wc -l'
+next_port_check=`cat $ORACLE_HOME/network/admin/tnsnames.ora | grep $next_port_final | wc -l'
+if [ $next_port_check -eq 1 ]
+then
+echo "${red}PORT NUMBER ALREADY EXISTS IN TNSNAMES${NC}"
+exit
+else
+echo "$db_name.mithi =
+(DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 10.0.20.206)(PORT = $port_no))
+    )
+    (CONNECT_DATA =
+      (SID = $db_name)
+      (SERVER = DEDICATED)
+    )
+)" >> $ORACLE_HOME/network/admin/tnsnames.ora
+#)" >> /tmp/tnsnames_test.ora
+sleep 1
+echo "${green}TNS ENTRY WITH THE NAME ${yellow}$db_name.mithi${NC} & PORT ${yellow}$port_no${green} HAS BEEN ADDED SUCCESSFULLY IN TNSNAMES.ORA FILE${NC}"
+fi
+}
+
+#################### LISTENER ENTRY ####################
+listener()
+{
+echo "LISTENER_$db_name =
+  (DESCRIPTION_LIST =
+    (DESCRIPTION =
+      (ADDRESS_LIST =
+        (ADDRESS = (PROTOCOL = TCP)(HOST = 10.0.20.206)(PORT = $port_no))
+      )
+    )
+  )
+
+SID_LIST_LISTENER_$db_name =
+  (SID_LIST =
+    (SID_DESC =
+      (ORACLE_HOME = /oracle_19c/app/oracle/product/19.3)
+      (SID_NAME = $db_name)
+    )
+)" >> $ORACLE_HOME/network/admin/listener.ora
+sleep 1
+echo
+echo "${green}LISTENER ENTRY WITH THE NAME ${yellow}LISTENER_$db_name${NC} & PORT ${yellow}$port_no${green} HAS BEEN ADDED SUCCESSFULLY IN LISTENER.ORA FILE${NC}"
+echo
+}
+
+#################### DB INIT FILE CREATION ####################
+
+db_initfile()
+{
+echo "*.aq_tm_processes=1
+*.compatible='12.2.0'
+*.control_files='$dg_name'
+*.db_create_file_dest='$dg_name'
+*.db_32k_cache_size=2634022912
+*.db_block_size=8192
+*.db_domain=''
+*.db_file_multiblock_read_count=32
+*.db_name='$db_name'
+*.db_writer_processes=8
+*.diagnostic_dest='/oracle_19c/app/oracle'
+*.fast_start_mttr_target=300
+*.instance_name='$db_name'
+*.job_queue_processes=10
+*.lock_sga=TRUE
+*.open_cursors=300
+*.parallel_execution_message_size=32767
+*.parallel_max_servers=32
+*.parallel_threads_per_cpu=8
+*.pga_aggregate_target=1147483648
+*.processes=300
+*.query_rewrite_enabled='FALSE'
+*.remote_login_passwordfile='EXCLUSIVE'
+*.resource_limit=TRUE
+*.sec_case_sensitive_logon=FALSE
+*.session_max_open_files=20
+*.sga_max_size=3368709120
+*.sga_target=3368709120
+*.star_transformation_enabled='FALSE'
+*.statistics_level='TYPICAL'
+*.timed_statistics=TRUE
+*.undo_management='auto'
+*.undo_retention=1800
+*.undo_tablespace='SYS_UNDOTS'" > $ORACLE_HOME/dbs/init$db_name.ora
+sleep 1
+echo
+echo "${green}INIT FILE HAS BEEN CREATED SUCCESSFULLY AS ${yellow}$ORACLE_HOME/dbs/init$db_name.ora${NC}"
+}
+
+#################### DB CREATION SCRIPT ####################
+
+db_creation()
+{
+echo "CREATE DATABASE $db_name
+MAXINSTANCES 1
+MAXLOGHISTORY 1
+MAXLOGFILES 50
+MAXLOGMEMBERS 3
+MAXDATAFILES 1000
+CONTROLFILE REUSE
+DATAFILE '$dg_name' SIZE 2G REUSE
+EXTENT MANAGEMENT LOCAL
+SYSAUX DATAFILE '$dg_name' SIZE 2G REUSE
+DEFAULT TEMPORARY TABLESPACE TEMP TEMPFILE '$dg_name' SIZE 31990M REUSE
+UNDO TABLESPACE "SYS_UNDOTS" DATAFILE '$dg_name' SIZE 31990M REUSE
+CHARACTER SET WE8ISO8859P1
+NATIONAL CHARACTER SET AL16UTF16
+LOGFILE GROUP 1 ('$dg_name') SIZE 100M REUSE,
+GROUP 2 ('$dg_name') SIZE 100M REUSE,
+GROUP 3 ('$dg_name') SIZE 100M REUSE,
+GROUP 4 ('$dg_name') SIZE 100M REUSE,
+GROUP 5 ('$dg_name') SIZE 100M REUSE,
+GROUP 6 ('$dg_name') SIZE 100M REUSE,
+GROUP 7 ('$dg_name') SIZE 100M REUSE,
+GROUP 8 ('$dg_name') SIZE 100M REUSE,
+GROUP 9 ('$dg_name') SIZE 100M REUSE,
+GROUP 10 ('$dg_name') SIZE 100M REUSE,
+GROUP 11 ('$dg_name') SIZE 100M REUSE,
+GROUP 12 ('$dg_name') SIZE 100M REUSE,
+GROUP 13 ('$dg_name') SIZE 100M REUSE,
+GROUP 14 ('$dg_name') SIZE 100M REUSE,
+GROUP 15 ('$dg_name') SIZE 100M REUSE,
+GROUP 16 ('$dg_name') SIZE 100M REUSE;" > /tmp/db_create_$db_name.sql
+sleep 1
+echo
+echo "${green}DB CREATION SQL SCRIPT HAS BEEN CREATED SUCCESSFULLY AS ${yellow}/tmp/db_create_$db_name.sql${NC}"
+}
+
+#################### PASSWORD FILE CREATION SCRIPT ####################
+
+pwdfile_creation()
+{
+#orapwd file=orapw$db_name password=password@1 entries=5
+orapwd file=orapw$db_name password=password#1 entries=5
+mv orapw$db_name $ORACLE_HOME/dbs/.
+echo
+sleep 1
+echo "${green}PASSWORD FILE HAS BEEN CREATED SUCCESSFULLY AS ${yellow}$ORACLE_HOME/dbs/orapw$db_name${NC}"
+echo
+}
+
+#################### DB START SCRIPT ####################
+
+db_create_start()
+{
+echo "${yellow}Checking the generated files...${NC}"
+echo "${brwhite}"
+ll /oracle_19c/app/oracle/product/19.3/dbs/init$db_name.ora
+echo
+ll /tmp/db_create_$db_name.sql
+echo
+ll /oracle_19c/app/oracle/product/19.3/dbs/orapw$db_name
+echo
+if [ -f /oracle_19c/app/oracle/product/19.3/dbs/init$db_name.ora ] && [ -f /tmp/db_create_$db_name.sql ] && [ -f /oracle_19c/app/oracle/product/19.3/dbs/orapw$db_name ]
+then
+echo "${green} ALL 3 FILES FOUND, PROCEEDING WITH DB CREATION"
+sleep 1
+echo
+echo "${brwhite}Do You want to continue with database creation/startup of $db_name? Y/y/N/n : ${NC} "
+echo
+read ans
+echo
+case $ans in
+[yY])
+echo
+echo "${greenblack}LOGGIN IN ${NC} ${yeblack} >> /tmp/db_creation_$db_name.log << $NC ${greenblack}KINDLY CHECK THIS IN ANOTHER SESSION ${NC}"
+echo
+echo "${green}DB CREATION, CATALOG, CATPROC IS IN PROGRESS${NC}"
+export ORACLE_SID=$db_name
+export ORANV_ASK=NO
+. oraenv a 2> /dev/null
+sqlplus -s / as sysdba << EOG > /tmp/db_creation_$db_name.log
+startup nomount;
+set time on timing on
+@/tmp/db_create_$db_name.sql
+@$ORACLE_HOME/rdbms/admin/catalog.sql
+@$ORACLE_HOME/rdbms/admin/catproc.sql
+exit;
+EOG
+
+#################### ASM CONTROLFILE LOCATE ######################
+
+export ORACLE_SID=+ASM 2> /dev/null
+export ORAENV_ASK=NO
+. oraenv a 2 >/dev/null
+
+asm_path=`asmcmd ls $dg_name/$db_name/controlfile/*`
+asm_file="$dg_name/$db_name/controlfile/$asm_path"
+
+#################################################################
+
+export ORACLE_SID=$db_name
+export ORANV_ASK=NO
+. oraenv a 2> /dev/null
+
+echo
+echo "${green}PUPBLD SCRIPT IS IN PROGRESS ${NC}"
+echo
+sqlplus -s system/manager @?/sqlplus/admin/pupbld.sql << EOH >> /tmp/db_creation_$db_name.log
+exit;
+EOH
+
+echo "${green}SPFILE CREATION ${NC}"
+echo
+sqlplus / as sysdba << EOH >> /tmp/db_creation_$db_name.log
+create spfile from pfile;
+shu immediate;
+EOH
+
+sqlplus / as sysdba << EOJ >> /tmp/db_creation_$db_name.log
+startup nomount;
+alter system set control_files='$asm_file' scope=spfile;
+shu immediate;
+exit;
+EOJ
+
+echo
+echo "${green}TABLESPACE CREATION IN PROGRESS${NC}"
+echo
+sqlplus -s / as sysdba << EOG >> /tmp/db_creation_$db_name.log
+startup;
+CREATE TABLESPACE TSDATA_100M DATAFILE '$dg_name'  SIZE 31990m blocksize 32768 default compress basic ;
+CREATE TABLESPACE TSIDX_50M DATAFILE '$dg_name' SIZE 31990m blocksize 32768 default compress basic;
+exit;
+EOG
+
+echo
+echo "${green}USER CREATION IN PROGRESS${NC}"
+echo
+sqlplus -s / as sysdba << EOG >> /tmp/db_creation_$db_name.log
+CREATE USER "GLIFS"
+IDENTIFIED BY GLIFS
+DEFAULT TABLESPACE "TSDATA_100M"
+TEMPORARY TABLESPACE "TEMP"
+PROFILE DEFAULT
+ACCOUNT UNLOCK;
+GRANT CONNECT TO GLIFS;
+GRANT DBA TO GLIFS;
+GRANT RESOURCE TO GLIFS;
+ALTER USER GLIFS DEFAULT ROLE ALL;
+GRANT CREATE SESSION TO GLIFS;
+GRANT UNLIMITED TABLESPACE TO GLIFS;
+
+CREATE USER "GLIFQ"
+IDENTIFIED BY GLIFQ
+DEFAULT TABLESPACE "TSDATA_100M"
+TEMPORARY TABLESPACE "TEMP"
+PROFILE DEFAULT
+ACCOUNT UNLOCK;
+GRANT CONNECT TO GLIFQ;
+GRANT RESOURCE TO GLIFQ;
+ALTER USER GLIFQ DEFAULT ROLE ALL;
+GRANT CREATE SESSION TO GLIFQ;
+GRANT UNLIMITED TABLESPACE TO GLIFQ;
+exit;
+EOG
+echo
+echo "${yellow} DB SUMMARY ${NC}"
+echo
+echo "${brwhite}DB NAME : $db_name , DG_NAME : $dg_name , LISTENER_NAME : LISTENER_$db_name , TNS_ENTRY_NAME : $db_name"
+echo
+echo "${yellow}TABLESPACES CREATED WITH 31990M SIZE ARE AS FOLLOWS${NC}"
+echo
+echo "${brwhite}TSDATA_100M , TSDATA_100M_A , TSIDX_50M , TSIDX_50M_A , TEMP, SYS_UNDOTS ${NC}"
+echo
+echo "${yellow}DB USERS/PASSWORD CREATED :${brwhite} GLIFS/GLIFS , GLIFQ/GLIFQ"
+echo
+echo
+echo "${green} DB POST CHECK ${NC}"
+sqlplus / as sysdba << EOM >> /tmp/db_creation_$db_name.log
+@/home/oracle/name.sql
+@/home/oracle/space.sql
+exit;
+EOM
+echo "${green} LISTENER STARTING ${NC}"
+echo
+lsnrctl start LISTENER_$db_name
+echo
+echo "${yellow} LISTENER_$db_name started PORT : $port_no${NC}"
+echo
+;;
+[nN])
+echo "${red}Exiting.....${NC}"
+exit;;
+*)
+exit;;
+esac
+else
+echo "${red}FILES ARE MISSING , KINDLY CHECK${NC}"
+fi
+}
+
+echo "${brwhite}Do You want to continue with database related file creation ? Y/y/N/n : ${NC} "
+echo
+read ans
+echo
+case $ans in
+[yY])
+oratab_entry
+export ORAENV_ASK=YES
+export ORACLE_SID=$db_name
+export ORAENV_ASK=NO
+. oraenv a 2 > /dev/null
+db_initfile
+db_creation
+pwdfile_creation
+tnsname
+listener
+db_create_start
+y=0
+;;
+[nN])
+echo "${red}Exiting.....${NC}"
+echo "${green}"
+echo "Thanks, Regards Vignesh S, Deepak Nanaware (DBA TEAM)"
+echo "${NC}"
+exit;;
+*)
+exit;;
+esac
+fi
+y=$(( y -1 ))
+done
+exit
