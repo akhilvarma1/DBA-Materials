@@ -1,0 +1,22 @@
+ORA-47401 while granting privilege on Database Vault protected object as object owner (Doc ID 1341292.1)
+
+PROBLEM STATEMENT -
+-- Database Vault is enabled in the database.
+-- While granting access / SELECT privilege on a table as the owner of the table ORA-47401 error is reported.
+
+SOLUTION - 
+Use the DVSYS.DBMS_MACADM.UPDATE_REALM_AUTH procedure and update the authorization of the user from Participant to 1: Owner.
+
+BEGIN
+DVSYS.DBMS_MACADM.UPDATE_REALM_AUTH(
+realm_name => 'Test_Realm',
+grantee => 'USERNAME',
+rule_set_name =>NULL,
+auth_options => DBMS_MACUTL.G_REALM_AUTH_OWNER);
+END;
+/
+
+Alternatively you can use the Database Vault console GUI to inspect and alter the settings.
+
+************************************************************************************************************
+ORA-47401: Realm violation for CREATE INDEX on another Schema Table (Doc ID 2884647.1)	
