@@ -1,0 +1,91 @@
+@/home/oracle/space
+
+
+@?/rdbms/admin/awrextr
+
+Enter value for file_name: awr_vvrtastub2_0101_0101
+
+snap fo taking backup
+176283
+
+177722
+exec dbms_workload_repository.drop_snapshot_range(14407,14430);
+
+@?/rdbms/admin/awrrpt
+
+100795
+102953
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Procedure for AWR Purging
+ 1) Run follwing script as SYS user to take export backup
+
+@?/rdbms/admin/awrrpt.sql
+
+Night Sysaux 136017 - 139084
+
+take begin and end snap
+
+    cd $ORACLE_HOME/rdbms/admin
+
+@?/rdbms/admin/awrextr.sql
+
+ 2) It will ask for dbid 
+    Give dbid for database
+3) it will ask for num_days
+    press enter,by default it will give all snaps generated
+4) It will ask for begin_snap(Snap_id from where u want start export backup)
+5) It will ask for end_snap(Snap_id upto which u want to take export backup)
+    export dump will be taken from begin_snap to end_snap
+6) It will ask for Directory name
+    Give AWR_PURGE 
+7) It will ask for file_name,For file name use following conventions
+    awr_dbname_(begin_snap_date)_(end_snap_date)
+8) It will generate export backup from begin_snap to end_snap
+    once export backup completed successfully.
+Do following Steps for deleting snaps
+exec dbms_workload_repository.DROP_SNAPSHOT_RANGE(136017,139084);
+Once it will complete successfully please run  awrrpt.sql to confirm.
+
+awrdat_135009_136016.dmp
+
+Sysaux Shrink
+SQL> 
+
+DELETE 
+FROM wrh$_active_session_history a 
+WHERE NOT EXISTS 
+(SELECT 1 
+FROM wrm$_snapshot 
+WHERE snap_id = a.snap_id 
+AND dbid = a.dbid 
+AND instance_number = a.instance_number 
+) and rownum<1001;
+
+SQL> Commit;
+
+SQL> alter table WRH$_ACTIVE_SESSION_HISTORY shrink space;
+
+
+
+exec dbms_workload_repository.DROP_SNAPSHOT_RANGE(109411,112336);
+
+
+
+
+
+
+
+
+
+alter table sys.WRH$_ACTIVE_SESSION_HISTORY move partition WRH$_ACTIVE_3860760733_105206 tablespace TSDATA_5M parallel 8;
+
+alter table sys.WRH$_ACTIVE_SESSION_HISTORY move partition WRH$_ACTIVE_3860760733_105206 tablespace SYSAUX parallel 8;
+
+alter index WRH$_ACTIVE_SESSION_HISTORY_PK  rebuild partition WRH$_ACTIVE_3860760733_105206 tablespace TSDATA_5M  parallel 8;
+
+alter index WRH$_ACTIVE_SESSION_HISTORY_PK  rebuild partition WRH$_ACTIVE_3860760733_105206 tablespace sysaux  parallel 8;
+
+alter table sys.WRH$_ACTIVE_SESSION_HISTORY noparallel;
+alter index sys.WRH$_ACTIVE_SESSION_HISTORY_PK noparallel;
