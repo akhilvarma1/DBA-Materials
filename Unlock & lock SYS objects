@@ -1,0 +1,29 @@
+exec dbms_stats.lock_table_stats('SYS','WRH$_ACTIVE_SESSION_HISTORY');
+exec dbms_stats.lock_table_stats('SYS','WRH$_FILESTATXS');
+exec dbms_stats.lock_table_stats('SYS','WRH$_EVENT_HISTOGRAM');
+exec dbms_stats.lock_table_stats('SYS','WRH$_LATCH');
+exec dbms_stats.lock_table_stats('SYS','WRH$_SQLSTAT');
+exec dbms_stats.lock_table_stats('SYS','WRP$_REPORTS_DETAILS');
+
+
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRH$_ACTIVE_SESSION_HISTORY' and owner ='SYS';
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRH$_FILESTATXS' and owner ='SYS';
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRH$_EVENT_HISTOGRAM' and owner ='SYS';
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRH$_LATCH' and owner ='SYS';
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRH$_SQLSTAT' and owner ='SYS';
+SELECT distinct (stattype_locked) FROM dba_tab_statistics WHERE table_name = 'WRP$_REPORTS_DETAILS' and owner ='SYS';
+
+exec dbms_stats.unlock_table_stats('SYS','WRH$_ACTIVE_SESSION_HISTORY');
+exec dbms_stats.unlock_table_stats('SYS','WRH$_FILESTATXS');
+exec dbms_stats.unlock_table_stats('SYS','WRH$_EVENT_HISTOGRAM');
+exec dbms_stats.unlock_table_stats('SYS','WRH$_LATCH');
+exec dbms_stats.unlock_table_stats('SYS','WRH$_SQLSTAT');
+exec dbms_stats.unlock_table_stats('SYS','WRP$_REPORTS_DETAILS');
+
+
+Gathering Dictionary Statistics Runs Very Long Time (Doc ID 2364599.1)
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_SYNOPSIS$');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_OPR');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_IND_HISTORY');
+exec dbms_stats.lock_table_stats('SYS', 'WRI$_OPTSTAT_HISTGRM_HISTORY');
+exec dbms_stats.lock_table_stats('SYS', 'WRH$_ACTIVE_SESSION_HISTORY');
