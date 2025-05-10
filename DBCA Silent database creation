@@ -1,0 +1,43 @@
+export ORACLE_HOME=/oracle_19c/app/oracle/product/19.0/bin
+
+
+
+dbca -silent -createDatabase -templateName General_Purpose.dbc -gdbName archdb1 -sid archdb1 -sysPassword R1gor0us -systemPassword R1gor0us -emConfiguration NONE -diskGroupName DG_PTDB_NIGHT -storageType ASM -characterSet WE8ISO8859P1
+
+dbca -silent -createDatabase -templateName General_Purpose.dbc -gdbName INVM3 -sid INVM3 -sysPassword R1gor0us -systemPassword R1gor0us -emConfiguration NONE -datafileDestination /goldengate_vvrt/invm3/ -storageType FS -characterSet WE8ISO8859P
+   
+# su oracle -c "$ORACLE_HOME/bin/dbca -silent -createDatabase -templateName General_Purpose.dbc 
+-gdbName $DBNAME -sid $ORACLE_SID -managementPolicy AUTOMATIC -configureTDE true -tdeAlgorithm AES256 -encryptTablespaces ALL -sysPassword password -systemPassword password 
+-tdeWalletPassword password [-tdeWalletLoginType AUTO_LOGIN] -dbsnmpPassword password -emConfiguration LOCAL 
+-storageType ASM -diskGroupName ASMgrp1 -datafileJarLocation $ORACLE_HOME/assistants/dbca/templates -nodeinfo node1,node2 -characterset "WE8ISO8859P1" 
+-configureoml4py -oml4pyConfigTablespace SYSAUX -enableOml4pyEmbeddedExecution true
+
+
+============================================================
+run in cd $ORACLE_HOME/bin
+
+export ORACLE_HOME=/oracle_home/app/oracle/product/19.3.0/dbhome_1
+export PATH=$ORACLE_HOME/bin:$PATH
+./dbca -silent -createDatabase -templateName General_Purpose.dbc  -gdbname mocklinux1 -sid mocklinux1 -datafileDestination /oracle_home/app/oracle/oradata/MOCKLINUX1/datafiles  -characterSet AL32UTF8 -sysPassword m0cklinux1 -totalMemory 2768 -systemPassword m0cklinux1
+
+
+-characterSet AL32UTF8 --> alert log (path ----> /oracle_home/app/oracle/diag/rdbms/autosys/autosys/trace/alert_autosys.log)
+-totalMemory 2768  -->: sga
+
+
+
+verify
+select name, open_mode from v$database;
+archive log list;
+select file_name from dba_data_files;
+select name from v$tempfile;
+
+online redo log 
+
+create tablespace
+add user
+
+
+
+
+create listerner file
