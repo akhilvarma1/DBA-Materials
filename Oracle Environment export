@@ -1,0 +1,5 @@
+export ORACLE_SID=orcl
+export ORACLE_BASE=/oracle19c/app/oracle
+export ORACLE_HOME=/oracle_19c/app/oracle/product/19.3
+export PATH=$PATH:$ORACLE_HOME/bin:$HOME/bin
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib
