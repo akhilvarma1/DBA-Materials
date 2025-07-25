@@ -1,0 +1,126 @@
+
+                  Referred Document : https://www.support.dbagenesis.com/post/oracle-data-pump-expdp-impdp
+
+
+--------------------------------   ORACLE EXPORT AND IMPORT OPERATIONS USING DATAPUMP  -----------------------------------
+
+
+1. EXPORT AND IMPORT OF TABLE .
+
+
+   TABLE NAME = FNSONLI.GEMI
+
+
+   A. CREATE DIRECTORY AT OS LEVEL :
+
+      PRESTDB2 : /home/oracle >cd /goldengate_vvrt
+      PRESTDB2 : /goldengate_vvrt >
+      PRESTDB2 : /goldengate_vvrt >mkdir DUMPS
+
+
+   B. CREATE DIRECTORY INSIDE THE DATABASE : 
+
+      SQL> CREATE DIRECTORY DUMPS AS '/goldengate_vvrt/DUMPS';  
+
+
+   C. TAKE EXPORT OF THE TABLE :
+
+      expdp directory=DUMPS dumpfile=gemi.dmp logfile=gemi.log tables='FNSONLI.GEMI';
+
+      Here , DUMPS    = name of the directory where dump files and log files will be created .
+             gemi.dmp = name of the dump file which will be created .
+             gemi.log = name of the log  file which will be created .
+
+             tables='FNSONLI.GEMI'; >>> the table which needs to be exported .
+
+
+   D. TAKE IMPORT OF THE TABLE ( TO SAME SCHEMA ) :
+
+      impdp directory=DUMPS dumpfile=gemi.dmp logfile=gemiimp.log;
+      
+      Here , DUMPS       = name of the directory where the log file will be created .
+             gemi.dmp    = name of the dump file from which table will be imported . 
+             gemiimp.log = name of the log file which will be created .
+
+
+   E. TAKE IMPORT OF THE TABLE ( TO ANOTHER SCHEMA ) 
+
+      impdp directory=DUMPS dumpfile=gemi.dmp logfile=gemiimp.log tables='GEMI' remap_schema='FNSONLI:IGGCCDP'
+
+      Here , remap_schema='FNSONLI:IGGCCDP' means the schema of the Imported Table will be changed to IGGCCDP .
+
+
+   F. TAKE IMPORT OF THE TABLE IN DIFFERENT TABLESPACE  ( TO ANOTHER SCHEMA ) 
+
+      impdp directory=DUMPS dumpfile=gemi.dmp logfile=gemiimp.log tables='GEMI' remap_schema='FNSONLI:IGGCCDP' remap_tablespace='USERS:MYTBS'
+
+      Here , remap_tablespace='USERS:MYTBS' means the tablespace where the table was present ( USERS ) and tablespace where table must be moved ( MYTBS ) .
+
+
+  G. TAKE IMPORT OF THE TABLE AND RENAME THE TABLE  ( TO ANOTHER SCHEMA ) 
+
+      impdp directory=DUMPS dumpfile=gemi.dmp logfile=gemiimp.log tables='GEMI' remap_table='FNSONLI.GEMI:IGGCCDP.GEMITB'
+
+      
+      
+      
+      
+2. EXPORT AND IMPORT OF SCHEMA ( SCHEMA : A SCHEMA MEANS A USER WHICH TO WHICH SOME OBJECTS HAVE BEEN ASSIGNED ) .
+      
+    
+    NAME OF THE SCHEMA : FNSONLI
+  
+
+   A. TAKE EXPORT OF THE SCHEMA :
+    
+      expdp directory=DUMPS dumpfile=fnsonlis.dmp logfile=fnsonli.log schemas='FNSONLI'   
+
+
+   B. TAKE IMPORT OF THE SCHEMA ( TO SAME SCHEMA ON TARGET ) :
+
+      impdp directory=DUMPS dumpfile=fnsonlis.dmp logfile=fnsonli.log remap_schema='FNSONLI:FNSONLI'
+
+
+   C. TAKE IMPORT OF THE SCHEMA ( TO DIFFERENT SCHEMA ON TARGET ) :
+
+      impdp directory=DUMPS dumpfile=fnsonlis.dmp logfile=fnsonli.log remap_schema='FNSONLI:FNSONLV4'
+
+
+
+
+
+3. EXPORT AND IMPORT OF FULL DATABASE . 
+
+   
+   * NOTE : FIRST A DUMMY DATABASE MUST BE CREATED USING DBCA OR MANUAL METHOD AND IN THE DUMMY DATABASE DATA MUST BE IMPORTED ) . *
+
+
+   All the contents of the database will be exported and imported to target .
+
+
+   Database name : INVM1
+
+ 
+   A. TAKE EXPORT OF THE DATABASE :
+
+
+     expdp directory=DUMPS dumpfile=invm1db.dmp logfile=invm1db.log full=y
+
+
+   B. IMPORT THE FULL DATABASE USING DUMPFILE ON TARGET :
+
+
+     -- On source
+
+       SQL> select name from v$tablespace;
+
+     -- On target
+       
+       SQL> select name from v$tablespace;
+
+     -- Create missing tablespaces on target
+     -- Make sure target tablespace has enough free space
+     -- Drop all non-oracle schemas (done during refresh)
+     -- DROP USER <username> CASCADE;
+
+    impdp directory=DUMPS dumpfile=invm1db.dmp logfile=invm1db.log full=y
