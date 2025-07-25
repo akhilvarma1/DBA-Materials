@@ -1,0 +1,84 @@
+
+
+
+MOVEMENT SOP
+
+
+
+
+
+November 2024
+
+
+
+
+
+
+
+Table of Contents
+
+1. Movement using ONLINE
+2. Movement using OFFLINE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+STEP 1: SET THE ENVIRONMENT OF THE CURRENT INSTANCE IN A DATABASE
+ps -ef | grep -i pmon
+ora_pmon_<instance name>
+ksh
+. oraenv a
+ORACLE_SID = <instance name>
+
+STEP 2: USE SYS login
+sqlplus / as sysdba
+STEP 3: For NON-PARTITION TABLE USING ONLINE
+alter table OWNER.TABLE_NAME move TABLESPACE NEW_TABLESPACE_NAME parallel 16 online;  ---> For Table 
+alter Index OWNER.INDEX_NAME move TABLESPACE TSDATA_100M_B parallel 16 online; ----> for  Index
+alter table OWNER.TABLE_NAME noparallel;
+alter Index OWNER.INDEX_NAME noparallel;
+						OR
+For PARTITION TABLE USING ONLINE
+alter table OWNER.TABLE_SEGMENT_NAME  move TABLE_PARTITION_NAME  TABLESPACE NEW_TABLESPACE_NAME  parallel 16 online;  ---> For Table 
+alter index OWNER.INDEXNAME_01  rebuild partition INDEX_PARTITION_NAME  parallel 16 online; ----> for index
+alter table OWNER.TABLE_NAME noparallel;
+alter index OWNER.INDEX_NAME  noparallel;
+
+STEP 4: For NON-PARTITION TABLE USING OFFLINE
+alter table OWNER.TABLE_NAME move TABLESPACE NEW_TABLESPACE_NAME parallel 16;  ---> For Table 
+alter Index OWNER.INDEX_NAME move TABLESPACE TSDATA_100M_B parallel 16; ----> for  Index
+alter table OWNER.TABLE_NAME noparallel;
+alter Index OWNER.INDEX_NAME noparallel;
+						OR
+For PARTITION TABLE USING OFFLINE
+alter table OWNER.TABLE_SEGMENT_NAME  move TABLE_PARTITION_NAME  TABLESPACE NEW_TABLESPACE_NAME  parallel 16 ;  ---> For Table 
+alter index OWNER.INDEXNAME_01  rebuild partition INDEX_PARTITION_NAME  parallel 16  ; ----> for index
+alter table OWNER.TABLE_NAME noparallel;
+alter index OWNER.INDEX_NAME  noparallel;
+
+
+STEP 4: PostCheck
+select degree from dba_tables where table_name='TABLE_NAME';  
+select index_name,partition_name from dba_ind_partitions where status = 'UNUSABLE';  ------------> The O/P should be no row selected.
+select index_name from dba_indexes where status = 'UNUSABLE';  ------------> The O/P should be no row selected.
+Select index_name, degree from dba_indexes where index_name like 'table_name%'; 
+NOTE: The UNUSABLE state it should be no row selected and degree should be one.
