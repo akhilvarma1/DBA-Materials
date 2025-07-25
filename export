@@ -1,0 +1,5 @@
+export ORACLE_SID=dbrept2
+export ORACLE_HOME=/oracle_19C/app/oracle/product/19.3
+export PATH=$ORACLE_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib
+export TNS_ADMIN=/oracle_19C/app/oracle/product/19.3/network/admin
