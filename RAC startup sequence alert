@@ -1,0 +1,102 @@
+10.0.20.186
+
+2024-02-19 19:42:28.604 [OHASD(10613)]CRS-8500: Oracle Clusterware OHASD process is starting with operating system process ID 10613
+2024-02-19 19:42:28.723 [OHASD(10613)]CRS-0714: Oracle Clusterware Release 19.0.0.0.0.
+2024-02-19 19:42:28.754 [OHASD(10613)]CRS-2112: The OLR service started on node rptappl1.
+2024-02-19 19:42:30.692 [OHASD(10613)]CRS-1301: Oracle High Availability Service started on node rptappl1.
+2024-02-19 19:42:30.693 [OHASD(10613)]CRS-8017: location: /var/opt/oracle/lastgasp has 2 reboot advisory log files, 0 were announced and 0 errors occurred
+2024-02-19 19:42:32.279 [ORAAGENT(10778)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 10778
+2024-02-19 19:42:32.418 [CSSDAGENT(10806)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 10806
+2024-02-19 19:42:32.421 [ORAROOTAGENT(10790)]CRS-8500: Oracle Clusterware ORAROOTAGENT process is starting with operating system process ID 10790
+2024-02-19 19:42:32.459 [CSSDMONITOR(10815)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 10815
+2024-02-19 19:42:33.612 [ORAAGENT(10833)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 10833
+2024-02-19 19:42:34.010 [MDNSD(10864)]CRS-8500: Oracle Clusterware MDNSD process is starting with operating system process ID 10864
+2024-02-19 19:42:34.037 [EVMD(10866)]CRS-8500: Oracle Clusterware EVMD process is starting with operating system process ID 10866
+2024-02-19 19:42:35.145 [GPNPD(10923)]CRS-8500: Oracle Clusterware GPNPD process is starting with operating system process ID 10923
+2024-02-19 19:42:36.143 [GPNPD(10923)]CRS-2328: Grid Plug and Play Daemon(GPNPD) started on node rptappl1.
+2024-02-19 19:42:36.265 [GIPCD(10995)]CRS-8500: Oracle Clusterware GIPCD process is starting with operating system process ID 10995
+2024-02-19 19:42:37.146 [GIPCD(10995)]CRS-7517: The Oracle Grid Interprocess Communication (GIPC) failed to identify the Fast Node Death Detection (FNDD).
+2024-02-19 19:42:40.169 [CSSDMONITOR(11094)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 11094
+2024-02-19 19:42:40.678 [CSSDAGENT(11108)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 11108
+2024-02-19 19:42:45.656 [OCSSD(11113)]CRS-8500: Oracle Clusterware OCSSD process is starting with operating system process ID 11113
+2024-02-19 19:42:46.787 [OCSSD(11113)]CRS-1713: CSSD daemon is started in hub mode
+
+
+
+10.0.20.181
+
+2024-02-19 19:57:25.761 [OHASD(27155)]CRS-8500: Oracle Clusterware OHASD process is starting with operating system process ID 27155
+2024-02-19 19:57:25.901 [OHASD(27155)]CRS-0714: Oracle Clusterware Release 19.0.0.0.0.
+2024-02-19 19:57:25.936 [OHASD(27155)]CRS-2112: The OLR service started on node rptdb2.
+2024-02-19 19:57:27.043 [OHASD(27155)]CRS-1301: Oracle High Availability Service started on node rptdb2.
+2024-02-19 19:57:27.044 [OHASD(27155)]CRS-8017: location: /var/opt/oracle/lastgasp has 2 reboot advisory log files, 0 were announced and 0 errors occurred
+2024-02-19 19:57:28.639 [ORAAGENT(27208)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 27208
+2024-02-19 19:57:28.844 [ORAROOTAGENT(27219)]CRS-8500: Oracle Clusterware ORAROOTAGENT process is starting with operating system process ID 27219
+2024-02-19 19:57:30.276 [CSSDMONITOR(27231)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 27231
+2024-02-19 19:57:30.277 [CSSDAGENT(27229)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 27229
+2024-02-19 19:57:31.404 [ORAAGENT(27237)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 27237
+2024-02-19 19:57:31.840 [MDNSD(27247)]CRS-8500: Oracle Clusterware MDNSD process is starting with operating system process ID 27247
+2024-02-19 19:57:31.868 [EVMD(27249)]CRS-8500: Oracle Clusterware EVMD process is starting with operating system process ID 27249
+2024-02-19 19:57:32.987 [GPNPD(27281)]CRS-8500: Oracle Clusterware GPNPD process is starting with operating system process ID 27281
+2024-02-19 19:57:33.975 [GPNPD(27281)]CRS-2328: Grid Plug and Play Daemon(GPNPD) started on node rptdb2.
+2024-02-19 19:57:34.122 [GIPCD(27337)]CRS-8500: Oracle Clusterware GIPCD process is starting with operating system process ID 27337
+2024-02-19 19:57:34.978 [GIPCD(27337)]CRS-7517: The Oracle Grid Interprocess Communication (GIPC) failed to identify the Fast Node Death Detection (FNDD).
+2024-02-19 19:57:36.459 [CSSDMONITOR(27351)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 27351
+2024-02-19 19:57:37.013 [CSSDAGENT(27356)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 27356
+2024-02-19 19:57:42.061 [OCSSD(27359)]CRS-8500: Oracle Clusterware OCSSD process is starting with operating system process ID 27359
+2024-02-19 19:57:43.209 [OCSSD(27359)]CRS-1713: CSSD daemon is started in hub mode
+2024-02-19 19:58:35.229 [OCSSD(27359)]CRS-1707: Lease acquisition for node rptdb2 number 2 completed
+2024-02-19 19:58:36.380 [OCSSD(27359)]CRS-1621: The IPMI configuration data for this node stored in the Oracle registry is incomplete; details at (:CSSNK00002:) in /oracle_19c_grid/app/orabase/diag/crs/rptdb2/crs/trace/ocssd.trc
+2024-02-19 19:58:36.382 [OCSSD(27359)]CRS-1617: The information required to do node kill for node rptdb2 is incomplete; details at (:CSSNM00004:) in /oracle_19c_grid/app/orabase/diag/crs/rptdb2/crs/trace/ocssd.trc
+2024-02-19 19:58:36.397 [OCSSD(27359)]CRS-1605: CSSD voting file is online: /dev/dg_OCR_VOTE/OCR_VOTE_0001; details in /oracle_19c_grid/app/orabase/diag/crs/rptdb2/crs/trace/ocssd.trc.
+2024-02-19 19:58:38.382 [OCSSD(27359)]CRS-1601: CSSD Reconfiguration complete. Active nodes are rptdb1 rptdb2 rptappl1 .
+2024-02-19 19:58:39.987 [OCSSD(27359)]CRS-1720: Cluster Synchronization Services daemon (CSSD) is ready for operation.
+2024-02-19 19:58:40.207 [OCTSSD(28197)]CRS-8500: Oracle Clusterware OCTSSD process is starting with operating system process ID 28197
+2024-02-19 19:58:41.073 [OCTSSD(28197)]CRS-2403: The Cluster Time Synchronization Service on host rptdb2 is in observer mode.
+2024-02-19 19:58:42.708 [OCTSSD(28197)]CRS-2407: The new Cluster Time Synchronization Service reference node is host rptdb1.
+2024-02-19 19:58:42.709 [OCTSSD(28197)]CRS-2401: The Cluster Time Synchronization Service started on host rptdb2.
+2024-02-19 19:58:52.705 [CRSD(28294)]CRS-8500: Oracle Clusterware CRSD process is starting with operating system process ID 28294
+2024-02-19 19:58:56.484 [CRSD(28294)]CRS-1012: The OCR service started on node rptdb2.
+2024-02-19 19:58:56.562 [CRSD(28294)]CRS-1201: CRSD started on node rptdb2.
+2024-02-19 19:58:58.728 [ORAAGENT(28337)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 28337
+2024-02-19 19:58:58.943 [ORAROOTAGENT(28348)]CRS-8500: Oracle Clusterware ORAROOTAGENT process is starting with operating system process ID 28348
+2024-02-19 19:59:04.988 [ORAAGENT(28415)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 28415
+
+
+10.0.20.180
+2024-02-19 20:12:19.397 [OHASD(14176)]CRS-8500: Oracle Clusterware OHASD process is starting with operating system process ID 14176
+2024-02-19 20:12:19.515 [OHASD(14176)]CRS-0714: Oracle Clusterware Release 19.0.0.0.0.
+2024-02-19 20:12:19.546 [OHASD(14176)]CRS-2112: The OLR service started on node rptdb1.
+2024-02-19 20:12:22.361 [OHASD(14176)]CRS-1301: Oracle High Availability Service started on node rptdb1.
+2024-02-19 20:12:22.362 [OHASD(14176)]CRS-8017: location: /var/opt/oracle/lastgasp has 2 reboot advisory log files, 0 were announced and 0 errors occurred
+2024-02-19 20:12:23.834 [ORAAGENT(14368)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 14368
+2024-02-19 20:12:23.966 [ORAROOTAGENT(14381)]CRS-8500: Oracle Clusterware ORAROOTAGENT process is starting with operating system process ID 14381
+2024-02-19 20:12:24.957 [CSSDMONITOR(14407)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 14407
+2024-02-19 20:12:24.958 [CSSDAGENT(14391)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 14391
+2024-02-19 20:12:25.988 [ORAAGENT(14447)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 14447
+2024-02-19 20:12:26.392 [MDNSD(14473)]CRS-8500: Oracle Clusterware MDNSD process is starting with operating system process ID 14473
+2024-02-19 20:12:26.423 [EVMD(14483)]CRS-8500: Oracle Clusterware EVMD process is starting with operating system process ID 14483
+2024-02-19 20:12:27.530 [GPNPD(14529)]CRS-8500: Oracle Clusterware GPNPD process is starting with operating system process ID 14529
+2024-02-19 20:12:28.525 [GPNPD(14529)]CRS-2328: Grid Plug and Play Daemon(GPNPD) started on node rptdb1.
+2024-02-19 20:12:28.662 [GIPCD(14603)]CRS-8500: Oracle Clusterware GIPCD process is starting with operating system process ID 14603
+2024-02-19 20:12:29.534 [GIPCD(14603)]CRS-7517: The Oracle Grid Interprocess Communication (GIPC) failed to identify the Fast Node Death Detection (FNDD).
+2024-02-19 20:12:30.954 [CSSDMONITOR(14669)]CRS-8500: Oracle Clusterware CSSDMONITOR process is starting with operating system process ID 14669
+2024-02-19 20:12:31.446 [CSSDAGENT(14680)]CRS-8500: Oracle Clusterware CSSDAGENT process is starting with operating system process ID 14680
+2024-02-19 20:12:36.417 [OCSSD(14690)]CRS-8500: Oracle Clusterware OCSSD process is starting with operating system process ID 14690
+2024-02-19 20:12:37.553 [OCSSD(14690)]CRS-1713: CSSD daemon is started in hub mode
+2024-02-19 20:13:44.662 [OCSSD(14690)]CRS-1707: Lease acquisition for node rptdb1 number 1 completed
+2024-02-19 20:13:45.802 [OCSSD(14690)]CRS-1621: The IPMI configuration data for this node stored in the Oracle registry is incomplete; details at (:CSSNK00002:) in /oracle_19c_grid/app/orabase/diag/crs/rptdb1/crs/trace/ocssd.trc
+2024-02-19 20:13:45.803 [OCSSD(14690)]CRS-1617: The information required to do node kill for node rptdb1 is incomplete; details at (:CSSNM00004:) in /oracle_19c_grid/app/orabase/diag/crs/rptdb1/crs/trace/ocssd.trc
+2024-02-19 20:13:45.820 [OCSSD(14690)]CRS-1605: CSSD voting file is online: /dev/dg_OCR_VOTE/OCR_VOTE_0001; details in /oracle_19c_grid/app/orabase/diag/crs/rptdb1/crs/trace/ocssd.trc.
+2024-02-19 20:13:47.450 [OCSSD(14690)]CRS-1601: CSSD Reconfiguration complete. Active nodes are rptdb1 rptdb2 rptappl1 .
+2024-02-19 20:13:48.658 [OCSSD(14690)]CRS-1720: Cluster Synchronization Services daemon (CSSD) is ready for operation.
+2024-02-19 20:13:48.729 [OCTSSD(17245)]CRS-8500: Oracle Clusterware OCTSSD process is starting with operating system process ID 17245
+2024-02-19 20:13:49.586 [OCTSSD(17245)]CRS-2403: The Cluster Time Synchronization Service on host rptdb1 is in observer mode.
+2024-02-19 20:13:51.147 [OCTSSD(17245)]CRS-2407: The new Cluster Time Synchronization Service reference node is host rptappl1.
+2024-02-19 20:13:51.148 [OCTSSD(17245)]CRS-2401: The Cluster Time Synchronization Service started on host rptdb1.
+2024-02-19 20:14:01.559 [CRSD(17549)]CRS-8500: Oracle Clusterware CRSD process is starting with operating system process ID 17549
+2024-02-19 20:14:05.409 [CRSD(17549)]CRS-1012: The OCR service started on node rptdb1.
+2024-02-19 20:14:05.478 [CRSD(17549)]CRS-1201: CRSD started on node rptdb1.
+2024-02-19 20:14:07.073 [ORAAGENT(17774)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 17774
+2024-02-19 20:14:07.273 [ORAROOTAGENT(17785)]CRS-8500: Oracle Clusterware ORAROOTAGENT process is starting with operating system process ID 17785
+2024-02-19 20:14:13.204 [ORAAGENT(17802)]CRS-8500: Oracle Clusterware ORAAGENT process is starting with operating system process ID 17802
