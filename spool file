@@ -1,0 +1,75 @@
+*************************************************** ASM ************************************************************
+ASM Output:
+. oraenv a
++ASM
+asmcmd lsdg
+
+sqlplus / as sysasm
+
+sho parameter pfile
+show parameter string
+show parameter asm
+
+*************************************************** OS ************************************************************
+Server:
+
+cd /oracle_19c_grid/app/oracle/product/19.3/bin/ or cd $ORACLE_HOME/bin
+./crsctl stat res -t
+
+----------------------------------------------------------------------------------------------
+hostname
+netstat -niw
+bdf
+ps -ef | grep pmon
+ps -ef | grep d.bin
+ps -ef | grep agent
+ps -ef | grep wat
+ps -ef | grep tns
+cat /etc/oratab
+cat /etc/hosts
+
+
+*************************************************** DB ************************************************************
+Database:
+
+spool Archf1i_19022022.log
+
+def
+set lines 500 pages 500
+select name,open_mode,database_role,flashback_on,log_mode,controlfile_type from v$database;
+show parameter spfile
+show parameter create   
+show parameter control
+show parameter config
+show parameter dest
+show parameter standby
+archive log list
+select * from v$diag_info;
+
+
+*******************************************************************************************************************************
+
+
+
+set numwidth 15
+select * from v$log;
+select name from v$datafile;
+select name from v$controlfile;
+select member from v$logfile;
+show parameter disk;
+
+spool off;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
