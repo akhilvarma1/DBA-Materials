@@ -1,0 +1,34 @@
+SQL> alter system kill session '1254,65163';                   -->> 1254 : sid  , 65163 : serial#
+
+
+
+
+select 'alter system kill session ''' || sid||','||serial#||''' immediate;' from v$session where username is not null and status='INACTIVE' and username='FNSONLIS'; -->> change user and active/inactive status
+
+
+select 'alter system kill session ''' || sid||','||serial#||''' immediate;' from gv$session where username is not null and SQL_ID='5ph9rpyx2zajm' and username='LINKUSR';
+
+
+
+fnsonli 
+
+FNSONLI
+
+
+
+select 'alter system kill session ''' || sid||','||serial#||''' immediate;' from v$session where username='FNSONLIR' and MODULE='SQL*Plus';
+
+select INST_ID,SID, SERIAL#, USERNAME, STATUS, PROCESS, SQL_ID, MODULE, LAST_CALL_ET/60, BLOCKING_SESSION, EVENT from gv$session where username is not null and status='ACTIVE' and MODULE='SQL*Plus';
+
+
+3545166 -- starting
+
+
+
+delete archivelog from sequence 3545166 until sequence 3547210 thread 1;
+
+2939504 -- starting
+
+delete archivelog from sequence 3545166 until sequence 2941521 thread 2;
+
+select 'alter system kill session '''||sid||','||serial#||',@'||inst_id||''';' as script from gv$session where SQL_ID='5ph9rpyx2zajm' and username='LINKUSR';
